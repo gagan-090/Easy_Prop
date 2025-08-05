@@ -1,12 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useAuth } from '../../contexts/AuthContext';
+import { useDashboard } from '../../hooks/useDashboard';
+import { getUserRevenue } from '../../services/supabaseService';
 import { 
   TrendingUp, 
   TrendingDown, 
   Eye, 
   Users, 
   Phone, 
-  Mail,
+  Mail, 
   Calendar,
   Download,
   Filter,
@@ -16,8 +19,51 @@ import {
 } from 'lucide-react';
 
 const Analytics = () => {
+  const { user } = useAuth();
+  const { stats, properties, leads, loading } = useDashboard();
   const [timeRange, setTimeRange] = useState('7d');
   const [activeChart, setActiveChart] = useState('overview');
+  const [revenue, setRevenue] = useState([]);
+
+  useEffect(() => {
+    loadRevenue();
+  }, [user]);
+
+  // Listen for property sold events to refresh revenue data
+  useEffect(() => {
+    const handlePropertySold = () => {
+      console.log('🔄 Analytics: Property sold event received, refreshing revenue data');
+      console.log('🔄 Analytics: Current user:', user);
+      loadRevenue();
+    };
+
+    window.addEventListener('propertySold', handlePropertySold);
+    return () => {
+      window.removeEventListener('propertySold', handlePropertySold);
+    };
+  }, [user]);
+
+  const loadRevenue = async () => {
+    if (!user?.uid) return;
+    
+    console.log('🔍 Analytics: Loading revenue for user:', user.uid);
+    
+    try {
+      const result = await getUserRevenue(user.uid);
+      console.log('🔍 Analytics: Revenue result:', result);
+      
+      if (result.success) {
+        console.log('🔍 Analytics: Revenue data:', result.data);
+        setRevenue(result.data);
+      } else {
+        console.error('Failed to load revenue:', result.error);
+        setRevenue([]);
+      }
+    } catch (error) {
+      console.error('Error loading revenue:', error);
+      setRevenue([]);
+    }
+  };
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -47,64 +93,104 @@ const Analytics = () => {
     { id: '1y', label: '1 Year' }
   ];
 
+  // Calculate analytics data from real user data
+  const totalViews = properties.reduce((sum, p) => sum + (p.views || 0), 0);
+  const totalInquiries = properties.reduce((sum, p) => sum + (p.inquiries || 0), 0);
+  const phoneLeads = leads.filter(l => l.contactMethod === 'phone').length;
+  const emailLeads = leads.filter(l => l.contactMethod === 'email').length;
+  const totalRevenue = revenue.reduce((sum, item) => sum + (item.amount || 0), 0);
+  const monthlyRevenue = revenue
+    .filter(item => {
+      const itemDate = new Date(item.created_at);
+      const currentDate = new Date();
+      return itemDate.getMonth() === currentDate.getMonth() && 
+             itemDate.getFullYear() === currentDate.getFullYear();
+    })
+    .reduce((sum, item) => sum + (item.amount || 0), 0);
+
+  console.log('🔍 Analytics: Revenue array:', revenue);
+  console.log('🔍 Analytics: Total revenue calculated:', totalRevenue);
+  console.log('🔍 Analytics: Monthly revenue calculated:', monthlyRevenue);
+
+  const formatPrice = (price) => {
+    if (price >= 10000000) {
+      return `₹${(price / 10000000).toFixed(1)} Cr`;
+    } else if (price >= 100000) {
+      return `₹${(price / 100000).toFixed(1)} L`;
+    }
+    return `₹${price.toLocaleString("en-IN")}`;
+  };
+
   const analyticsData = [
     {
       title: 'Total Views',
-      value: '12,847',
-      change: '+12.5%',
-      trend: 'up',
+      value: totalViews.toLocaleString(),
+      change: totalViews > 0 ? '+12.5%' : '0%',
+      trend: totalViews > 0 ? 'up' : 'neutral',
       icon: Eye,
       color: 'blue'
     },
     {
-      title: 'Unique Visitors',
-      value: '8,234',
-      change: '+8.2%',
-      trend: 'up',
-      icon: Users,
+      title: 'Total Revenue',
+      value: formatPrice(totalRevenue),
+      change: totalRevenue > 0 ? '+15.2%' : '0%',
+      trend: totalRevenue > 0 ? 'up' : 'neutral',
+      icon: TrendingUp,
       color: 'green'
     },
     {
-      title: 'Phone Calls',
-      value: '156',
-      change: '-2.1%',
-      trend: 'down',
-      icon: Phone,
+      title: 'Monthly Revenue',
+      value: formatPrice(monthlyRevenue),
+      change: monthlyRevenue > 0 ? '+8.7%' : '0%',
+      trend: monthlyRevenue > 0 ? 'up' : 'neutral',
+      icon: Activity,
       color: 'purple'
     },
     {
-      title: 'Email Inquiries',
-      value: '89',
-      change: '+15.3%',
-      trend: 'up',
+      title: 'Total Inquiries',
+      value: totalInquiries.toString(),
+      change: totalInquiries > 0 ? '+15.3%' : '0%',
+      trend: totalInquiries > 0 ? 'up' : 'neutral',
       icon: Mail,
       color: 'orange'
     }
   ];
 
-  const topProperties = [
-    {
-      id: 1,
-      title: 'Modern Villa in Downtown',
-      views: 1247,
-      inquiries: 23,
-      image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=100&h=100&fit=crop'
-    },
-    {
-      id: 2,
-      title: 'Luxury Apartment Complex',
-      views: 987,
-      inquiries: 18,
-      image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=100&h=100&fit=crop'
-    },
-    {
-      id: 3,
-      title: 'Cozy Family Home',
-      views: 756,
-      inquiries: 12,
-      image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=100&h=100&fit=crop'
-    }
-  ];
+  // Get top performing properties
+  const topProperties = properties
+    .sort((a, b) => (b.views || 0) - (a.views || 0))
+    .slice(0, 3)
+    .map(property => ({
+      id: property.id,
+      title: property.title || 'Untitled Property',
+      views: property.views || 0,
+      inquiries: property.inquiries || 0,
+      image: (() => {
+        // Check if the image is a blob URL (temporary) and skip it
+        const isValidImage = (url) => {
+          if (!url) return false;
+          if (url.startsWith('blob:')) return false; // Skip blob URLs
+          // Allow Supabase Storage URLs
+          if (url.includes('supabase.co') || url.includes('storage.googleapis.com')) return true;
+          // Allow other valid URLs
+          return url.startsWith('http://') || url.startsWith('https://');
+        };
+        
+        if (property.images && property.images.length > 0 && isValidImage(property.images[0])) {
+          return property.images[0];
+        }
+        
+        // Return a fallback image based on property type
+        const imageMap = {
+          villa: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=100&h=100&fit=crop',
+          apartment: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=100&h=100&fit=crop',
+          commercial: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=100&h=100&fit=crop',
+          land: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=100&h=100&fit=crop'
+        };
+        
+        return imageMap[property.type] || imageMap.apartment;
+      })()
+    }));
 
   const trafficSources = [
     { source: 'Direct', percentage: 45, color: 'bg-blue-500' },

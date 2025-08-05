@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../../contexts/AuthContext';
+import { getUserLeads, updateLeadStatus } from '../../services/supabaseService';
 import {
   MessageSquare,
   Phone,
@@ -26,6 +28,7 @@ import {
 } from 'lucide-react';
 
 const Leads = () => {
+  const { user } = useAuth();
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedLead, setSelectedLead] = useState(null);
@@ -34,103 +37,46 @@ const Leads = () => {
   const [sortBy, setSortBy] = useState('newest');
 
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setLeads([
-        {
-          id: 1,
-          name: "Rajesh Kumar",
-          email: "rajesh.kumar@email.com",
-          phone: "+91 98765 43210",
-          property: "Modern Villa in Bandra West",
-          propertyId: 1,
-          message: "I'm interested in this property. Can we schedule a visit this weekend?",
-          status: "new",
-          priority: "high",
-          source: "website",
-          createdAt: "2024-01-20T10:30:00Z",
-          lastContact: null,
-          rating: 5,
-          budget: "25-30 Cr",
-          location: "Mumbai",
-          avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face"
-        },
-        {
-          id: 2,
-          name: "Priya Sharma",
-          email: "priya.sharma@email.com",
-          phone: "+91 87654 32109",
-          property: "Luxury Apartment in Powai",
-          propertyId: 2,
-          message: "What are the maintenance charges? Is parking included?",
-          status: "contacted",
-          priority: "medium",
-          source: "referral",
-          createdAt: "2024-01-19T14:15:00Z",
-          lastContact: "2024-01-19T16:30:00Z",
-          rating: 4,
-          budget: "15-20 Cr",
-          location: "Mumbai",
-          avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&h=100&fit=crop&crop=face"
-        },
-        {
-          id: 3,
-          name: "Amit Patel",
-          email: "amit.patel@email.com",
-          phone: "+91 76543 21098",
-          property: "Premium Office Space in BKC",
-          propertyId: 3,
-          message: "Looking for office space for my startup. Can you provide more details about the amenities?",
-          status: "qualified",
-          priority: "high",
-          source: "social_media",
-          createdAt: "2024-01-18T09:45:00Z",
-          lastContact: "2024-01-19T11:20:00Z",
-          rating: 5,
-          budget: "40-50 Cr",
-          location: "Mumbai",
-          avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face"
-        },
-        {
-          id: 4,
-          name: "Sneha Reddy",
-          email: "sneha.reddy@email.com",
-          phone: "+91 65432 10987",
-          property: "Cozy 2BHK in Andheri East",
-          propertyId: 4,
-          message: "Is this property still available? I would like to know about the loan facilities.",
-          status: "converted",
-          priority: "low",
-          source: "website",
-          createdAt: "2024-01-15T16:20:00Z",
-          lastContact: "2024-01-18T10:15:00Z",
-          rating: 4,
-          budget: "10-15 Cr",
-          location: "Mumbai",
-          avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face"
-        },
-        {
-          id: 5,
-          name: "Vikram Singh",
-          email: "vikram.singh@email.com",
-          phone: "+91 54321 09876",
-          property: "Modern Villa in Bandra West",
-          propertyId: 1,
-          message: "Can you share the floor plans and more interior photos?",
-          status: "ignored",
-          priority: "low",
-          source: "advertisement",
-          createdAt: "2024-01-14T12:10:00Z",
-          lastContact: null,
-          rating: 3,
-          budget: "20-25 Cr",
-          location: "Mumbai",
-          avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face"
-        }
-      ]);
+    loadLeads();
+  }, [user]);
+
+  const loadLeads = async () => {
+    if (!user?.uid) return;
+    
+    setLoading(true);
+    try {
+      const result = await getUserLeads(user.uid);
+      if (result.success) {
+        setLeads(result.data);
+      } else {
+        console.error('Failed to load leads:', result.error);
+        setLeads([]);
+      }
+    } catch (error) {
+      console.error('Error loading leads:', error);
+      setLeads([]);
+    } finally {
       setLoading(false);
-    }, 1000);
-  }, []);
+    }
+  };
+
+  const handleStatusUpdate = async (leadId, oldStatus, newStatus) => {
+    try {
+      const result = await updateLeadStatus(user.uid, leadId, oldStatus, newStatus);
+      if (result.success) {
+        // Update local state
+        setLeads(prevLeads => 
+          prevLeads.map(lead => 
+            lead.id === leadId ? { ...lead, status: newStatus } : lead
+          )
+        );
+      } else {
+        console.error('Failed to update lead status:', result.error);
+      }
+    } catch (error) {
+      console.error('Error updating lead status:', error);
+    }
+  };
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -188,9 +134,9 @@ const Leads = () => {
   const sortedLeads = [...filteredLeads].sort((a, b) => {
     switch (sortBy) {
       case 'newest':
-        return new Date(b.createdAt) - new Date(a.createdAt);
+        return new Date(b.created_at) - new Date(a.created_at);
       case 'oldest':
-        return new Date(a.createdAt) - new Date(b.createdAt);
+        return new Date(a.created_at) - new Date(b.created_at);
       case 'priority':
         const priorityOrder = { high: 3, medium: 2, low: 1 };
         return priorityOrder[b.priority] - priorityOrder[a.priority];
@@ -460,12 +406,12 @@ const Leads = () => {
                       <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
                         <div className="flex items-center">
                           <Calendar className="h-3 w-3 mr-1" />
-                          {new Date(lead.createdAt).toLocaleDateString()}
+                          {new Date(lead.created_at).toLocaleDateString()}
                         </div>
-                        {lead.lastContact && (
+                        {lead.last_contact_at && (
                           <div className="flex items-center">
                             <Clock className="h-3 w-3 mr-1" />
-                            Last contact: {new Date(lead.lastContact).toLocaleDateString()}
+                            Last contact: {new Date(lead.last_contact_at).toLocaleDateString()}
                           </div>
                         )}
                         <div className="bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded-full">

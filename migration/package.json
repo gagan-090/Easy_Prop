@@ -1,0 +1,36 @@
+{
+  "name": "easyprop-migration",
+  "version": "1.0.0",
+  "description": "SQL to Supabase migration scripts for EasyProp platform",
+  "type": "module",
+  "main": "batchImport.js",
+  "scripts": {
+    "setup": "node setup.js",
+    "migrate": "node batchImport.js",
+    "migrate:users": "node importUsers.js",
+    "migrate:properties": "node importProperties.js",
+    "migrate:leads": "node importLeads.js",
+    "migrate:revenue": "node importRevenue.js",
+    "migrate:analytics": "node importAnalytics.js",
+    "validate": "node validateImport.js",
+    "test": "node validateImport.js"
+  },
+  "keywords": [
+    "supabase",
+    "postgresql",
+    "migration",
+    "sql",
+    "real-estate"
+  ],
+  "author": "EasyProp Team",
+  "license": "MIT",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.38.4"
+  },
+  "devDependencies": {
+    "dotenv": "^16.3.1"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

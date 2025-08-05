@@ -1,0 +1,24 @@
+[
+  {
+    "date": "2024-12-01",
+    "userId": "user_001",
+    "total_views": 150,
+    "unique_views": 120,
+    "total_leads": 5,
+    "new_leads": 3,
+    "converted_leads": 1,
+    "total_revenue": 50000,
+    "transactions": 1,
+    "average_transaction": 50000,
+    "active_properties": 25,
+    "sold_properties": 1,
+    "rented_properties": 0,
+    "new_properties": 2,
+    "logins": 3,
+    "time_spent": 180,
+    "direct_traffic": 80,
+    "search_traffic": 45,
+    "social_traffic": 15,
+    "referral_traffic": 10
+  }
+]

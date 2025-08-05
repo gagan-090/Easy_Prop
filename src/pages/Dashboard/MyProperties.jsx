@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
+import { getUserPropertiesWithAnalytics, deleteProperty, updateProperty } from '../../services/supabaseService';
 import {
   Search,
   Filter,
@@ -24,102 +26,93 @@ import {
   MessageSquare,
   IndianRupee,
   Home,
-  Activity
+  Activity,
+  CheckCircle,
+  Clock
 } from 'lucide-react';
 
 const MyProperties = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
-  const [selectedProperties, setSelectedProperties] = useState([]);
+  const [openDropdownId, setOpenDropdownId] = useState(null);
 
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setProperties([
-        {
-          id: 1,
-          title: "Modern Villa in Bandra West",
-          price: 25000000,
-          location: "Bandra West, Mumbai",
-          type: "Villa",
-          bedrooms: 4,
-          bathrooms: 3,
-          area: 2500,
-          status: "active",
-          views: 1234,
-          inquiries: 23,
-          rating: 4.8,
-          image: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=400&h=300&fit=crop",
-          createdAt: "2024-01-15",
-          lastUpdated: "2024-01-20",
-          featured: true,
-          change: "+15%"
-        },
-        {
-          id: 2,
-          title: "Luxury Apartment in Powai",
-          price: 18000000,
-          location: "Powai, Mumbai",
-          type: "Apartment",
-          bedrooms: 3,
-          bathrooms: 2,
-          area: 1800,
-          status: "active",
-          views: 892,
-          inquiries: 15,
-          rating: 4.6,
-          image: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=400&h=300&fit=crop",
-          createdAt: "2024-01-10",
-          lastUpdated: "2024-01-18",
-          featured: false,
-          change: "+8%"
-        },
-        {
-          id: 3,
-          title: "Premium Office Space in BKC",
-          price: 45000000,
-          location: "BKC, Mumbai",
-          type: "Office",
-          bedrooms: 0,
-          bathrooms: 4,
-          area: 3200,
-          status: "pending",
-          views: 567,
-          inquiries: 8,
-          rating: 4.9,
-          image: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&h=300&fit=crop",
-          createdAt: "2024-01-05",
-          lastUpdated: "2024-01-12",
-          featured: true,
-          change: "-2%"
-        },
-        {
-          id: 4,
-          title: "Cozy 2BHK in Andheri East",
-          price: 12000000,
-          location: "Andheri East, Mumbai",
-          type: "Apartment",
-          bedrooms: 2,
-          bathrooms: 2,
-          area: 1200,
-          status: "sold",
-          views: 2341,
-          inquiries: 45,
-          rating: 4.4,
-          image: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=300&fit=crop",
-          createdAt: "2023-12-20",
-          lastUpdated: "2024-01-08",
-          featured: false,
-          change: "+22%"
-        }
-      ]);
-      setLoading(false);
-    }, 1000);
+    loadProperties();
+  }, [user]);
+
+  // Listen for property added events to refresh data
+  useEffect(() => {
+    const handlePropertyAdded = () => {
+      console.log('🔄 MyProperties: Property added event received, refreshing data');
+      loadProperties();
+    };
+
+    window.addEventListener('propertyAdded', handlePropertyAdded);
+    return () => {
+      window.removeEventListener('propertyAdded', handlePropertyAdded);
+    };
   }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      // Only close if dropdown is open and click is not on dropdown content or button
+      if (openDropdownId && 
+          !event.target.closest('.dropdown-container') && 
+          !event.target.closest('.dropdown-button')) {
+        setOpenDropdownId(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [openDropdownId]);
+
+  const loadProperties = async () => {
+    if (!user?.uid) return;
+    
+    setLoading(true);
+    try {
+      const result = await getUserPropertiesWithAnalytics(user.uid);
+      if (result.success) {
+        setProperties(result.data);
+      } else {
+        console.error('Failed to load properties:', result.error);
+        setProperties([]);
+      }
+    } catch (error) {
+      console.error('Error loading properties:', error);
+      setProperties([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteProperty = async (propertyId, propertyType) => {
+    if (!confirm('Are you sure you want to delete this property?')) return;
+    
+    try {
+      const result = await deleteProperty(user.uid, propertyId, propertyType);
+      if (result.success) {
+        setProperties(prevProperties => 
+          prevProperties.filter(property => property.id !== propertyId)
+        );
+      } else {
+        alert('Failed to delete property: ' + result.error);
+      }
+    } catch (error) {
+      console.error('Error deleting property:', error);
+      alert('Failed to delete property. Please try again.');
+    }
+  };
 
   const formatPrice = (price) => {
     if (price >= 10000000) {
@@ -147,7 +140,8 @@ const MyProperties = () => {
 
   const filteredProperties = properties.filter(property => {
     const matchesSearch = property.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         property.location.toLowerCase().includes(searchTerm.toLowerCase());
+                         (property.address && property.address.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                         (property.city && property.city.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesFilter = filterStatus === 'all' || property.status === filterStatus;
     return matchesSearch && matchesFilter;
   });
@@ -155,9 +149,9 @@ const MyProperties = () => {
   const sortedProperties = [...filteredProperties].sort((a, b) => {
     switch (sortBy) {
       case 'newest':
-        return new Date(b.createdAt) - new Date(a.createdAt);
+        return new Date(b.created_at) - new Date(a.created_at);
       case 'oldest':
-        return new Date(a.createdAt) - new Date(b.createdAt);
+        return new Date(a.created_at) - new Date(b.created_at);
       case 'price-high':
         return b.price - a.price;
       case 'price-low':
@@ -209,6 +203,7 @@ const MyProperties = () => {
       animate="visible"
       className="space-y-8"
     >
+
       {/* Header */}
       <motion.div variants={itemVariants} className="flex items-center justify-between">
         <div>
@@ -393,16 +388,42 @@ const MyProperties = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
                   whileHover={{ y: -5, scale: 1.02 }}
-                  className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 dark:border-gray-700 overflow-hidden group"
+                  className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 dark:border-gray-700 group"
                 >
                   <div className="relative">
-                    <motion.img
-                      whileHover={{ scale: 1.1 }}
-                      transition={{ duration: 0.3 }}
-                      src={property.image}
-                      alt={property.title}
-                      className="w-full h-48 object-cover"
-                    />
+                                         <motion.img
+                       whileHover={{ scale: 1.1 }}
+                       transition={{ duration: 0.3 }}
+                       src={(() => {
+                         // Check if the image is a blob URL (temporary) and skip it
+                         const isValidImage = (url) => {
+                           if (!url) return false;
+                           if (url.startsWith('blob:')) return false; // Skip blob URLs
+                           // Allow Supabase Storage URLs
+                           if (url.includes('supabase.co') || url.includes('storage.googleapis.com')) return true;
+                           // Allow other valid URLs
+                           return url.startsWith('http://') || url.startsWith('https://');
+                         };
+                         
+                         if (property.images && property.images.length > 0 && isValidImage(property.images[0])) {
+                           console.log('✅ Using actual image for property:', property.title, property.images[0]);
+                           return property.images[0];
+                         }
+                         
+                         // Return a fallback image based on property type
+                         const imageMap = {
+                           villa: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=400&h=300&fit=crop&crop=center',
+                           apartment: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=400&h=300&fit=crop&crop=center',
+                           commercial: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=400&h=300&fit=crop&crop=center',
+                           land: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=400&h=300&fit=crop&crop=center'
+                         };
+                         
+                         console.log('⚠️ Using fallback image for property:', property.title, 'Type:', property.type);
+                         return imageMap[property.type] || imageMap.apartment;
+                       })()}
+                       alt={property.title}
+                       className="w-full h-48 object-cover"
+                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     
                     {/* Status Badge */}
@@ -423,21 +444,36 @@ const MyProperties = () => {
                       <motion.button
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/dashboard/view-property/${property.id}`);
+                        }}
                         className="p-2 bg-white/90 text-gray-700 rounded-lg hover:bg-white transition-colors"
+                        title="View Property"
                       >
                         <Eye className="h-4 w-4" />
                       </motion.button>
                       <motion.button
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/dashboard/edit-property/${property.id}`);
+                        }}
                         className="p-2 bg-white/90 text-gray-700 rounded-lg hover:bg-white transition-colors"
+                        title="Edit Property"
                       >
                         <Edit className="h-4 w-4" />
                       </motion.button>
                       <motion.button
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/dashboard/share-property/${property.id}`);
+                        }}
                         className="p-2 bg-white/90 text-gray-700 rounded-lg hover:bg-white transition-colors"
+                        title="Share Property"
                       >
                         <Share2 className="h-4 w-4" />
                       </motion.button>
@@ -452,15 +488,15 @@ const MyProperties = () => {
                         </h3>
                         <div className="flex items-center text-sm text-gray-500 dark:text-gray-400 mb-2">
                           <MapPin className="h-3 w-3 mr-1" />
-                          {property.location}
+                          {property.address && property.city ? `${property.address}, ${property.city}` : property.address || property.city || 'Location not specified'}
                         </div>
                       </div>
-                      <div className="flex items-center space-x-1">
-                        <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                        <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
-                          {property.rating}
-                        </span>
-                      </div>
+                                             <div className="flex items-center space-x-1">
+                         <Star className="h-4 w-4 text-yellow-400 fill-current" />
+                         <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                           {property.rating || 4.5}
+                         </span>
+                       </div>
                     </div>
 
                     <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 mb-4">
@@ -480,42 +516,159 @@ const MyProperties = () => {
                       <motion.span
                         whileHover={{ scale: 1.1 }}
                         className="flex items-center bg-blue-50 dark:bg-blue-900/20 px-3 py-1 rounded-full"
+                        title={`${property.analytics?.views_today || 0} views today, ${property.analytics?.views_this_month || 0} this month`}
                       >
                         <Eye className="h-4 w-4 mr-1 text-blue-500" />
-                        {property.views} views
+                        {property.views || 0} views
+                        {property.analytics?.views_today > 0 && (
+                          <span className="ml-1 text-xs bg-green-100 text-green-700 px-1 rounded">
+                            +{property.analytics.views_today}
+                          </span>
+                        )}
                       </motion.span>
                       <motion.span
                         whileHover={{ scale: 1.1 }}
                         className="flex items-center bg-green-50 dark:bg-green-900/20 px-3 py-1 rounded-full"
                       >
                         <MessageSquare className="h-4 w-4 mr-1 text-green-500" />
-                        {property.inquiries} inquiries
+                        {property.inquiries || 0} inquiries
                       </motion.span>
                     </div>
 
                     <div className="flex items-center justify-between">
                       <motion.span
                         whileHover={{ scale: 1.05 }}
-                        className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${
-                          property.change.startsWith("+")
-                            ? "text-green-700 bg-green-100 dark:text-green-400 dark:bg-green-900/20"
-                            : "text-red-700 bg-red-100 dark:text-red-400 dark:bg-red-900/20"
-                        }`}
+                        className="inline-flex px-3 py-1 text-xs font-semibold rounded-full text-blue-700 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/20"
                       >
-                        {property.change.startsWith("+") ? (
-                          <TrendingUp className="h-3 w-3 mr-1" />
-                        ) : (
-                          <TrendingDown className="h-3 w-3 mr-1" />
-                        )}
-                        {property.change}
+                        <TrendingUp className="h-3 w-3 mr-1" />
+                        +0% this month
                       </motion.span>
-                      <motion.button
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                      >
-                        <MoreVertical className="h-4 w-4" />
-                      </motion.button>
+                      <div className="relative">
+                        <motion.button
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenDropdownId(openDropdownId === property.id ? null : property.id);
+                          }}
+                          className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors dropdown-button"
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </motion.button>
+                        
+                        {openDropdownId === property.id && (
+                          <div className="absolute right-0 bottom-full mb-2 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-100 dark:border-gray-700 py-2 min-w-[180px] z-[9999] dropdown-container">
+
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/dashboard/view-property/${property.id}`);
+                                setOpenDropdownId(null);
+                              }}
+                              className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center space-x-2"
+                            >
+                              <Eye className="h-4 w-4" />
+                              <span>View</span>
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/dashboard/edit-property/${property.id}`);
+                                setOpenDropdownId(null);
+                              }}
+                              className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center space-x-2"
+                            >
+                              <Edit className="h-4 w-4" />
+                              <span>Edit</span>
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/dashboard/share-property/${property.id}`);
+                                setOpenDropdownId(null);
+                              }}
+                              className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center space-x-2"
+                            >
+                              <Share2 className="h-4 w-4" />
+                              <span>Share</span>
+                            </button>
+                            <hr className="my-1 border-gray-200 dark:border-gray-600" />
+                            <button
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                if (window.confirm('Are you sure you want to mark this property as sold? This will update the revenue tracking.')) {
+                                  try {
+                                    console.log('🔍 MyProperties: Marking property as sold:', property);
+                                    console.log('🔍 MyProperties: Property user_id:', property.user_id);
+                                    console.log('🔍 MyProperties: Current user uid:', user?.uid);
+                                    
+                                    const { updateProperty } = await import('../../services/supabaseService');
+                                    const result = await updateProperty(property.id, { status: 'sold' });
+                                    
+                                    if (result.success) {
+                                      // Add revenue entry for the sold property
+                                      const { addRevenue } = await import('../../services/supabaseService');
+                                      await addRevenue(user.uid, {
+                                        property_id: property.id,
+                                        amount: property.price,
+                                        type: 'commission',
+                                        description: `Property sold: ${property.title}`
+                                      });
+                                      
+                                      alert('Property marked as sold successfully! Revenue has been updated.');
+                                      // Refresh the properties list
+                                      loadProperties();
+                                      // Trigger a global refresh to update dashboard stats
+                                      console.log('🎯 MyProperties: Dispatching propertySold event for property:', property.id, 'amount:', property.price);
+                                      window.dispatchEvent(new CustomEvent('propertySold', { 
+                                        detail: { propertyId: property.id, amount: property.price } 
+                                      }));
+                                    } else {
+                                      alert('Failed to mark property as sold. Please try again.');
+                                    }
+                                  } catch (error) {
+                                    console.error('Error marking property as sold:', error);
+                                    alert('Failed to mark property as sold. Please try again.');
+                                  }
+                                }
+                                setOpenDropdownId(null);
+                              }}
+                              className="w-full px-4 py-2 text-left text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 flex items-center space-x-2"
+                            >
+                              <CheckCircle className="h-4 w-4" />
+                              <span>Mark as Sold</span>
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (window.confirm('Are you sure you want to mark this property as unsold?')) {
+                                  // Update property status to active
+                                  console.log('Marking property as unsold:', property.id);
+                                }
+                                setOpenDropdownId(null);
+                              }}
+                              className="w-full px-4 py-2 text-left text-sm text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 flex items-center space-x-2"
+                            >
+                              <Clock className="h-4 w-4" />
+                              <span>Mark as Unsold</span>
+                            </button>
+                            <hr className="my-1 border-gray-200 dark:border-gray-600" />
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (window.confirm('Are you sure you want to delete this property? This action cannot be undone.')) {
+                                  handleDeleteProperty(property.id, property.type);
+                                }
+                                setOpenDropdownId(null);
+                              }}
+                              className="w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center space-x-2"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              <span>Delete</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </motion.div>
@@ -527,7 +680,7 @@ const MyProperties = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden"
+              className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700"
             >
               <div className="overflow-x-auto">
                 <table className="w-full">
@@ -565,18 +718,43 @@ const MyProperties = () => {
                       >
                         <td className="px-6 py-4">
                           <div className="flex items-center">
-                            <img
-                              src={property.image}
-                              alt={property.title}
-                              className="w-16 h-16 rounded-xl object-cover mr-4"
-                            />
+                                                         <img
+                               src={(() => {
+                                 // Check if the image is a blob URL (temporary) and skip it
+                                 const isValidImage = (url) => {
+                                   if (!url) return false;
+                                   if (url.startsWith('blob:')) return false; // Skip blob URLs
+                                   // Allow Supabase Storage URLs
+                                   if (url.includes('supabase.co') || url.includes('storage.googleapis.com')) return true;
+                                   // Allow other valid URLs
+                                   return url.startsWith('http://') || url.startsWith('https://');
+                                 };
+                                 
+                                 if (property.images && property.images.length > 0 && isValidImage(property.images[0])) {
+                                   return property.images[0];
+                                 }
+                                 
+                                 // Return a fallback image based on property type
+                                 const imageMap = {
+                                   villa: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=64&h=64&fit=crop&crop=center',
+                                   apartment: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=64&h=64&fit=crop&crop=center',
+                                   commercial: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=64&h=64&fit=crop&crop=center',
+                                   land: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=64&h=64&fit=crop&crop=center'
+                                 };
+                                 
+                                 console.log('⚠️ Using fallback image for property (list view):', property.title, 'Type:', property.type);
+                                 return imageMap[property.type] || imageMap.apartment;
+                               })()}
+                               alt={property.title}
+                               className="w-16 h-16 rounded-xl object-cover mr-4"
+                             />
                             <div>
                               <h3 className="font-semibold text-gray-900 dark:text-white">
                                 {property.title}
                               </h3>
                               <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center">
                                 <MapPin className="h-3 w-3 mr-1" />
-                                {property.location}
+                                {property.address && property.city ? `${property.address}, ${property.city}` : property.address || property.city || 'Location not specified'}
                               </p>
                               <p className="text-xs text-gray-400 dark:text-gray-500">
                                 {property.bedrooms} BHK • {property.area} sq ft
@@ -611,28 +789,40 @@ const MyProperties = () => {
                             <motion.button
                               whileHover={{ scale: 1.1 }}
                               whileTap={{ scale: 0.9 }}
+                              onClick={() => navigate(`/dashboard/view-property/${property.id}`)}
                               className="p-2 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                              title="View Property"
                             >
                               <Eye className="h-4 w-4" />
                             </motion.button>
                             <motion.button
                               whileHover={{ scale: 1.1 }}
                               whileTap={{ scale: 0.9 }}
+                              onClick={() => navigate(`/dashboard/edit-property/${property.id}`)}
                               className="p-2 text-gray-400 hover:text-green-600 dark:hover:text-green-400 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors"
+                              title="Edit Property"
                             >
                               <Edit className="h-4 w-4" />
                             </motion.button>
                             <motion.button
                               whileHover={{ scale: 1.1 }}
                               whileTap={{ scale: 0.9 }}
+                              onClick={() => navigate(`/dashboard/share-property/${property.id}`)}
                               className="p-2 text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
+                              title="Share Property"
                             >
                               <Share2 className="h-4 w-4" />
                             </motion.button>
                             <motion.button
                               whileHover={{ scale: 1.1 }}
                               whileTap={{ scale: 0.9 }}
+                              onClick={() => {
+                                if (window.confirm('Are you sure you want to delete this property? This action cannot be undone.')) {
+                                  handleDeleteProperty(property.id, property.type);
+                                }
+                              }}
                               className="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                              title="Delete Property"
                             >
                               <Trash2 className="h-4 w-4" />
                             </motion.button>

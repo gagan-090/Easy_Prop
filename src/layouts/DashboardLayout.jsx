@@ -20,7 +20,9 @@ import {
   Globe,
   ChevronDown,
   Activity,
-  PieChart
+  PieChart,
+  CheckCircle,
+  Calendar
 } from 'lucide-react';
 
 const DashboardLayout = () => {
@@ -31,10 +33,18 @@ const DashboardLayout = () => {
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  
+  // Debug logging
+  console.log('🏠 DashboardLayout - User data:', user);
+  console.log('🏠 DashboardLayout - User type:', user?.userType);
 
-  const handleLogout = () => {
-    logout();
-    navigate('/');
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   const toggleDarkMode = () => {
@@ -46,8 +56,10 @@ const DashboardLayout = () => {
     { name: 'Dashboard', href: '/dashboard', icon: BarChart3, current: location.pathname === '/dashboard' },
     { name: 'Add Property', href: '/dashboard/add-property', icon: Plus, current: location.pathname === '/dashboard/add-property' },
     { name: 'My Properties', href: '/dashboard/my-properties', icon: List, current: location.pathname === '/dashboard/my-properties' },
+    { name: 'Sold', href: '/dashboard/sold', icon: CheckCircle, current: location.pathname === '/dashboard/sold' },
     { name: 'Website Preview', href: '/dashboard/website-preview', icon: Eye, current: location.pathname === '/dashboard/website-preview' },
     { name: 'Leads & Inquiries', href: '/dashboard/leads', icon: MessageSquare, current: location.pathname === '/dashboard/leads' },
+    { name: 'Tours', href: '/dashboard/tours', icon: Calendar, current: location.pathname === '/dashboard/tours' },
     { name: 'Analytics', href: '/dashboard/analytics', icon: PieChart, current: location.pathname === '/dashboard/analytics' },
     { name: 'Settings', href: '/dashboard/settings', icon: Settings, current: location.pathname === '/dashboard/settings' },
   ];
@@ -148,6 +160,9 @@ const DashboardLayout = () => {
                   <div className="ml-3">
                     <p className="text-sm font-medium text-gray-700 dark:text-gray-200">{user?.name || 'John Doe'}</p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email || 'gaganshuklarmg@gmail.com'}</p>
+                    <p className="text-xs text-blue-600 dark:text-blue-400 font-medium capitalize">
+                      {user?.userType || 'Agent'}
+                    </p>
                   </div>
                   <button
                     onClick={handleLogout}
@@ -244,6 +259,9 @@ const DashboardLayout = () => {
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                   {user?.email || 'gaganshuklarmg@gmail.com'}
+                </p>
+                <p className="text-xs text-blue-600 dark:text-blue-400 font-medium capitalize">
+                  {user?.userType || 'Agent'}
                 </p>
               </div>
               <motion.button
@@ -384,6 +402,9 @@ const DashboardLayout = () => {
                         <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
                           <p className="text-sm font-medium text-gray-900 dark:text-white">{user?.name || 'John Doe'}</p>
                           <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email || 'gaganshuklarmg@gmail.com'}</p>
+                          <p className="text-xs text-blue-600 dark:text-blue-400 font-medium capitalize">
+                            {user?.userType || 'Agent'}
+                          </p>
                         </div>
                         <Link
                           to="/dashboard/settings"

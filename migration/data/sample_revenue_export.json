@@ -1,0 +1,26 @@
+[
+  {
+    "id": "rev_001",
+    "userId": "user_001",
+    "propertyId": "prop_001",
+    "leadId": "lead_001",
+    "amount": 300000,
+    "currency": "INR",
+    "type": "commission",
+    "transactionId": "TXN_001_2024",
+    "paymentMethod": "bank_transfer",
+    "paymentStatus": "completed",
+    "createdAt": "2024-11-15T10:00:00Z",
+    "receivedAt": "2024-11-15T10:00:00Z",
+    "dueDate": "2024-11-15T10:00:00Z",
+    "description": "Commission from property sale",
+    "category": "primary",
+    "recurring": false,
+    "taxAmount": 54000,
+    "taxRate": 18,
+    "netAmount": 246000,
+    "clientName": "Sarah Johnson",
+    "clientEmail": "sarah.johnson@example.com",
+    "clientPhone": "+91-9876543211"
+  }
+]

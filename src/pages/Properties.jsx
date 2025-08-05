@@ -12,11 +12,16 @@ import {
 } from "lucide-react";
 import PropertyCard from "../components/PropertyCard";
 import Loading from "../components/Loading";
+import { useAuth } from "../contexts/AuthContext";
+import { getAllProperties, deleteProperty } from "../services/supabaseService";
 
 const Properties = () => {
+
   const [searchParams] = useSearchParams();
+  const { user } = useAuth();
   const [properties, setProperties] = useState([]);
   const [filters, setFilters] = useState({
+    listingType: searchParams.get("listingType") || "",
     propertyType: searchParams.get("propertyType") || "",
     priceRange: searchParams.get("priceRange") || "",
     city: searchParams.get("city") || "",
@@ -24,103 +29,111 @@ const Properties = () => {
   });
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState("grid");
+  const [allProperties, setAllProperties] = useState([]);
 
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setProperties([
-        {
-          id: 1,
-          title: "Modern Villa in Bandra West",
-          price: 25000000,
-          location: "Bandra West, Mumbai",
-          beds: 4,
-          baths: 3,
-          sqft: 2200,
-          type: "villa",
-          image: "/api/placeholder/400/300",
-          featured: true,
-        },
-        {
-          id: 2,
-          title: "Luxury Apartment in Powai",
-          price: 18000000,
-          location: "Powai, Mumbai",
-          beds: 3,
-          baths: 2,
-          sqft: 1450,
-          type: "apartment",
-          image: "/api/placeholder/400/300",
-          featured: false,
-        },
-        {
-          id: 3,
-          title: "Premium Office Space in BKC",
-          price: 45000000,
-          location: "Bandra Kurla Complex, Mumbai",
-          beds: 0,
-          baths: 4,
-          sqft: 3500,
-          type: "commercial",
-          image: "/api/placeholder/400/300",
-          featured: true,
-        },
-        {
-          id: 4,
-          title: "Spacious Villa in Juhu",
-          price: 35000000,
-          location: "Juhu, Mumbai",
-          beds: 5,
-          baths: 4,
-          sqft: 2800,
-          type: "villa",
-          image: "/api/placeholder/400/300",
-          featured: false,
-        },
-        {
-          id: 5,
-          title: "Modern Flat in Andheri",
-          price: 12000000,
-          location: "Andheri East, Mumbai",
-          beds: 2,
-          baths: 2,
-          sqft: 1100,
-          type: "apartment",
-          image: "/api/placeholder/400/300",
-          featured: false,
-        },
-        {
-          id: 6,
-          title: "Premium Plot in Lonavala",
-          price: 8000000,
-          location: "Lonavala, Maharashtra",
-          beds: 0,
-          baths: 0,
-          sqft: 5000,
-          type: "land",
-          image: "/api/placeholder/400/300",
-          featured: false,
-        },
-      ]);
-      setLoading(false);
-    }, 1000);
+    loadProperties();
   }, []);
+
+  const loadProperties = async () => {
+    setLoading(true);
+    try {
+      const result = await getAllProperties();
+      if (result.success) {
+        setAllProperties(result.data);
+        setProperties(result.data); // Initially show all properties
+      } else {
+        console.error("Failed to load properties:", result.error);
+        setProperties([]);
+      }
+    } catch (error) {
+      console.error("Error loading properties:", error);
+      setProperties([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSearch = async () => {
+    setLoading(true);
+    try {
+      const activeFilters = Object.entries(filters).reduce((acc, [key, value]) => {
+        if (value) {
+          acc[key] = value;
+        }
+        return acc;
+      }, {});
+
+      const result = await getAllProperties(activeFilters);
+      if (result.success) {
+        setProperties(result.data);
+      } else {
+        console.error("Failed to filter properties:", result.error);
+        setProperties([]);
+      }
+    } catch (error) {
+      console.error("Error filtering properties:", error);
+      setProperties([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteProperty = async (propertyId, propertyType) => {
+
+    if (!user?.uid) return;
+    
+    try {
+      const result = await deleteProperty(user.uid, propertyId, propertyType);
+      if (result.success) {
+        setProperties(prevProperties => 
+          prevProperties.filter(property => property.id !== propertyId)
+        );
+      } else {
+        alert('Failed to delete property: ' + result.error);
+      }
+    } catch (error) {
+      console.error('Error deleting property:', error);
+      alert('Failed to delete property. Please try again.');
+    }
+  };
+
+  const listingTypes = [
+    { value: "", label: "All Listings" },
+    { value: "sale", label: "For Sale" },
+    { value: "rent", label: "For Rent" },
+  ];
 
   const propertyTypes = [
     { value: "", label: "All Types" },
     { value: "apartment", label: "Apartments" },
     { value: "villa", label: "Villas" },
-    { value: "land", label: "Land" },
-    { value: "commercial", label: "Commercial" },
+    { value: "house", label: "Houses" },
+    { value: "office", label: "Office Space" },
+    { value: "shop", label: "Shops" },
+    { value: "land", label: "Land/Plot" },
   ];
 
-  const priceRanges = [
-    { value: "", label: "Any Price" },
-    { value: "0-5000000", label: "Under ₹50L" },
-    { value: "5000000-10000000", label: "₹50L - ₹1Cr" },
-    { value: "10000000-20000000", label: "₹1Cr - ₹2Cr" },
-    { value: "20000000+", label: "Above ₹2Cr" },
-  ];
+  const getPriceRanges = () => {
+    if (filters.listingType === 'rent') {
+      return [
+        { value: "", label: "Any Price" },
+        { value: "0-25000", label: "Under ₹25K" },
+        { value: "25000-50000", label: "₹25K - ₹50K" },
+        { value: "50000-100000", label: "₹50K - ₹1L" },
+        { value: "100000-200000", label: "₹1L - ₹2L" },
+        { value: "200000+", label: "Above ₹2L" },
+      ];
+    } else {
+      return [
+        { value: "", label: "Any Price" },
+        { value: "0-5000000", label: "Under ₹50L" },
+        { value: "5000000-10000000", label: "₹50L - ₹1Cr" },
+        { value: "10000000-20000000", label: "₹1Cr - ₹2Cr" },
+        { value: "20000000+", label: "Above ₹2Cr" },
+      ];
+    }
+  };
 
   const bhkOptions = [
     { value: "", label: "Any BHK" },
@@ -145,36 +158,10 @@ const Properties = () => {
     setFilters((prev) => ({ ...prev, [key]: value }));
   };
 
-  const filteredProperties = properties.filter((property) => {
-    if (filters.propertyType && property.type !== filters.propertyType)
-      return false;
-    if (
-      filters.city &&
-      !property.location.toLowerCase().includes(filters.city.toLowerCase())
-    )
-      return false;
-
-    if (filters.priceRange) {
-      const [min, max] = filters.priceRange.split("-").map(Number);
-      if (max) {
-        if (property.price < min || property.price > max) return false;
-      } else {
-        if (property.price < min) return false;
-      }
-    }
-
-    if (
-      filters.bhk &&
-      filters.bhk !== property.beds.toString() &&
-      filters.bhk !== "4+"
-    )
-      return false;
-    if (filters.bhk === "4+" && property.beds < 4) return false;
-
-    return true;
-  });
+  const filteredProperties = properties;
 
   if (loading) {
+
     return <Loading message="Loading properties..." fullScreen />;
   }
 
@@ -184,7 +171,9 @@ const Properties = () => {
       <div className="bg-white border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-6 py-8">
           <h1 className="text-4xl font-bold text-slate-900 mb-4">
-            Properties for Sale
+            {filters.listingType === 'rent' ? 'Properties for Rent' : 
+             filters.listingType === 'sale' ? 'Properties for Sale' : 
+             'All Properties'}
           </h1>
           <p className="text-lg text-slate-600">
             Find your perfect property from our extensive listings
@@ -195,7 +184,27 @@ const Properties = () => {
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Search & Filters */}
         <div className="bg-white rounded-2xl shadow-soft p-6 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+            <div className="search-filter">
+              <div className="text-xl text-slate-400">🏷️</div>
+              <div className="flex-1">
+                <div className="text-xs text-slate-500 mb-1">Listing type</div>
+                <select
+                  value={filters.listingType}
+                  onChange={(e) =>
+                    handleFilterChange("listingType", e.target.value)
+                  }
+                  className="w-full bg-transparent border-none outline-none font-medium text-slate-900"
+                >
+                  {listingTypes.map((type) => (
+                    <option key={type.value} value={type.value}>
+                      {type.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <ChevronDown className="h-4 w-4 text-slate-400" />
+            </div>
             <div className="search-filter">
               <MapPin className="h-5 w-5 text-slate-400" />
               <div className="flex-1">
@@ -242,7 +251,7 @@ const Properties = () => {
                   }
                   className="w-full bg-transparent border-none outline-none font-medium text-slate-900"
                 >
-                  {priceRanges.map((range) => (
+                  {getPriceRanges().map((range) => (
                     <option key={range.value} value={range.value}>
                       {range.label}
                     </option>
@@ -278,10 +287,11 @@ const Properties = () => {
               <span className="text-sm font-medium">More filters</span>
             </button>
 
-            <button className="btn-primary px-8">
+            <button className="btn-primary px-8" onClick={handleSearch}>
               <Search className="h-4 w-4 mr-2" />
               Search
             </button>
+
           </div>
         </div>
 
@@ -338,18 +348,31 @@ const Properties = () => {
                 : "grid-cols-1 max-w-4xl mx-auto"
             }`}
           >
-            {filteredProperties.map((property, index) => (
-              <div 
-                key={property.id} 
-                className="fade-in"
-                style={{animationDelay: `${index * 0.1}s`}}
-              >
-                <PropertyCard
-                  property={property}
-                  onFavorite={(id) => console.log("Favorite clicked:", id)}
-                />
-              </div>
-            ))}
+            {filteredProperties.map((property, index) => {
+              const isOwner = user?.uid === property.user_id;
+              console.log('Rendering property:', {
+                id: property.id,
+                title: property.title,
+                user_id: property.user_id,
+                current_user: user?.uid,
+                isOwner: isOwner
+              });
+              
+              return (
+                <div 
+                  key={property.id} 
+                  className="fade-in"
+                  style={{animationDelay: `${index * 0.1}s`}}
+                >
+                  <PropertyCard
+                    property={property}
+                    isOwner={isOwner}
+                    onFavorite={(id) => console.log("Favorite clicked:", id)}
+                    onDelete={handleDeleteProperty}
+                  />
+                </div>
+              );
+            })}
           </div>
         ) : (
           <div className="text-center py-20">
@@ -365,6 +388,7 @@ const Properties = () => {
             <button
               onClick={() =>
                 setFilters({
+                  listingType: "",
                   propertyType: "",
                   priceRange: "",
                   city: "",
