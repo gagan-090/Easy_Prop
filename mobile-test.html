@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile Property Cards Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8fafc;
+            padding: 20px 0;
+        }
+        
+        .container {
+            max-width: 100%;
+            overflow: hidden;
+        }
+        
+        .section-title {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 0 20px;
+        }
+        
+        .section-title h2 {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+        
+        .section-title p {
+            color: #64748b;
+            font-size: 16px;
+        }
+        
+        .cards-container {
+            display: flex;
+            gap: 16px;
+            overflow-x: auto;
+            padding: 0 20px 16px 20px;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        
+        .cards-container::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .property-card {
+            flex: none;
+            width: 280px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            scroll-snap-align: start;
+            transition: transform 0.3s ease;
+        }
+        
+        .property-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .property-image {
+            width: 100%;
+            height: 160px;
+            background: linear-gradient(45deg, #3b82f6, #8b5cf6);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .property-content {
+            padding: 16px;
+        }
+        
+        .property-location {
+            color: #64748b;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+        
+        .property-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 12px;
+            line-height: 1.4;
+        }
+        
+        .property-price {
+            font-size: 20px;
+            font-weight: bold;
+            background: linear-gradient(45deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 12px;
+        }
+        
+        .property-details {
+            display: flex;
+            justify-content: space-between;
+            color: #64748b;
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+        
+        .property-button {
+            width: 100%;
+            background: linear-gradient(45deg, #3b82f6, #8b5cf6);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        
+        .property-button:hover {
+            transform: scale(1.02);
+        }
+        
+        .scroll-indicator {
+            text-align: center;
+            margin-top: 16px;
+            color: #64748b;
+            font-size: 14px;
+        }
+        
+        @media (min-width: 768px) {
+            .cards-container {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+                gap: 24px;
+                overflow: visible;
+                scroll-snap-type: none;
+            }
+            
+            .property-card {
+                width: auto;
+            }
+            
+            .scroll-indicator {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="section-title">
+            <h2>Popular Properties</h2>
+            <p>Swipe left to see more properties</p>
+        </div>
+        
+        <div class="cards-container">
+            <div class="property-card">
+                <div class="property-image">Property 1</div>
+                <div class="property-content">
+                    <div class="property-location">📍 Mumbai, Maharashtra</div>
+                    <div class="property-title">Luxury 3BHK Apartment with Sea View</div>
+                    <div class="property-price">₹2.5 Cr</div>
+                    <div class="property-details">
+                        <span>3 BHK</span>
+                        <span>1200 sqft</span>
+                    </div>
+                    <button class="property-button">View Details</button>
+                </div>
+            </div>
+            
+            <div class="property-card">
+                <div class="property-image">Property 2</div>
+                <div class="property-content">
+                    <div class="property-location">📍 Pune, Maharashtra</div>
+                    <div class="property-title">Modern 2BHK with Premium Amenities</div>
+                    <div class="property-price">₹1.8 Cr</div>
+                    <div class="property-details">
+                        <span>2 BHK</span>
+                        <span>950 sqft</span>
+                    </div>
+                    <button class="property-button">View Details</button>
+                </div>
+            </div>
+            
+            <div class="property-card">
+                <div class="property-image">Property 3</div>
+                <div class="property-content">
+                    <div class="property-location">📍 Bangalore, Karnataka</div>
+                    <div class="property-title">Spacious 4BHK Villa with Garden</div>
+                    <div class="property-price">₹3.2 Cr</div>
+                    <div class="property-details">
+                        <span>4 BHK</span>
+                        <span>1800 sqft</span>
+                    </div>
+                    <button class="property-button">View Details</button>
+                </div>
+            </div>
+            
+            <div class="property-card">
+                <div class="property-image">Property 4</div>
+                <div class="property-content">
+                    <div class="property-location">📍 Delhi, NCR</div>
+                    <div class="property-title">Premium 3BHK in Prime Location</div>
+                    <div class="property-price">₹2.8 Cr</div>
+                    <div class="property-details">
+                        <span>3 BHK</span>
+                        <span>1350 sqft</span>
+                    </div>
+                    <button class="property-button">View Details</button>
+                </div>
+            </div>
+            
+            <div class="property-card">
+                <div class="property-image">Property 5</div>
+                <div class="property-content">
+                    <div class="property-location">📍 Chennai, Tamil Nadu</div>
+                    <div class="property-title">Elegant 2BHK Near IT Hub</div>
+                    <div class="property-price">₹1.5 Cr</div>
+                    <div class="property-details">
+                        <span>2 BHK</span>
+                        <span>850 sqft</span>
+                    </div>
+                    <button class="property-button">View Details</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="scroll-indicator">
+            👆 Swipe horizontally to browse properties
+        </div>
+    </div>
+</body>
+</html>

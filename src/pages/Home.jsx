@@ -245,7 +245,7 @@ const Home = () => {
     <>
       {/* Hero Section */}
 
-      <section className="relative pt-20 pb-32 bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
+      <section className="relative pt-16 md:pt-20 pb-20 md:pb-32 bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
         {/* Background Image with Overlay */}
         <div className="absolute inset-0 z-0">
           <img
@@ -255,56 +255,56 @@ const Home = () => {
           />
           <div className="absolute inset-0 bg-gradient-to-br from-slate-900/70 via-slate-800/60 to-slate-900/80"></div>
         </div>
-        <div className="max-w-7xl mx-auto px-6 relative z-10">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 relative z-10">
           {/* Main Heading */}
-          <div className="text-center mb-20">
-            <div className="inline-block mb-6">
-              <span className="bg-gradient-primary text-white px-6 py-2 rounded-full text-sm font-semibold shadow-lg">
+          <div className="text-center mb-12 md:mb-20">
+            <div className="inline-block mb-4 md:mb-6">
+              <span className="bg-gradient-primary text-white px-4 md:px-6 py-2 rounded-full text-xs md:text-sm font-semibold shadow-lg">
                 🏠 India's #1 Property Platform
               </span>
             </div>
-            <h1 className="text-6xl lg:text-7xl font-bold text-white mb-8 leading-tight">
+            <h1 className="text-3xl md:text-6xl lg:text-7xl font-bold text-white mb-6 md:mb-8 leading-tight">
               Find Your Dream
               <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
                 {" "}
                 Home
               </span>
               <br />
-              <span className="text-4xl lg:text-5xl text-white/90">
+              <span className="text-2xl md:text-4xl lg:text-5xl text-white/90">
                 in Noida
               </span>
             </h1>
-            <p className="text-xl text-white/80 max-w-3xl mx-auto mb-12">
+            <p className="text-base md:text-xl text-white/80 max-w-3xl mx-auto mb-8 md:mb-12 px-4">
               Discover premium properties, luxury villas, and modern apartments
               with our AI-powered search. Your perfect home is just a click
               away.
             </p>
 
             {/* Quick Stats with enhanced animations */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto mb-16">
-              <div className="text-center glass-morphism p-6 rounded-2xl hover-lift interactive-button">
-                <div className="text-3xl font-bold text-blue-600 mb-2 heartbeat">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8 max-w-4xl mx-auto mb-12 md:mb-16">
+              <div className="text-center glass-morphism p-3 md:p-6 rounded-xl md:rounded-2xl hover-lift interactive-button">
+                <div className="text-xl md:text-3xl font-bold text-blue-600 mb-1 md:mb-2 heartbeat">
                   {stats.propertiesListed}
                 </div>
-                <div className="text-sm text-slate-600">Properties Listed</div>
+                <div className="text-xs md:text-sm text-slate-600">Properties Listed</div>
               </div>
-              <div className="text-center glass-morphism p-6 rounded-2xl hover-lift interactive-button">
-                <div className="text-3xl font-bold text-purple-600 mb-2 wave-animation">
+              <div className="text-center glass-morphism p-3 md:p-6 rounded-xl md:rounded-2xl hover-lift interactive-button">
+                <div className="text-xl md:text-3xl font-bold text-purple-600 mb-1 md:mb-2 wave-animation">
                   {stats.happyCustomers}
                 </div>
-                <div className="text-sm text-slate-600">Happy Customers</div>
+                <div className="text-xs md:text-sm text-slate-600">Happy Customers</div>
               </div>
-              <div className="text-center glass-morphism p-6 rounded-2xl hover-lift interactive-button">
-                <div className="text-3xl font-bold text-pink-600 mb-2 breathing">
+              <div className="text-center glass-morphism p-3 md:p-6 rounded-xl md:rounded-2xl hover-lift interactive-button">
+                <div className="text-xl md:text-3xl font-bold text-pink-600 mb-1 md:mb-2 breathing">
                   {stats.expertAgents}
                 </div>
-                <div className="text-sm text-slate-600">Expert Agents</div>
+                <div className="text-xs md:text-sm text-slate-600">Expert Agents</div>
               </div>
-              <div className="text-center glass-morphism p-6 rounded-2xl hover-lift interactive-button">
-                <div className="text-3xl font-bold text-green-600 mb-2 levitate">
+              <div className="text-center glass-morphism p-3 md:p-6 rounded-xl md:rounded-2xl hover-lift interactive-button">
+                <div className="text-xl md:text-3xl font-bold text-green-600 mb-1 md:mb-2 levitate">
                   {stats.citiesCovered}
                 </div>
-                <div className="text-sm text-slate-600">Cities Covered</div>
+                <div className="text-xs md:text-sm text-slate-600">Cities Covered</div>
               </div>
             </div>
           </div>
@@ -312,7 +312,7 @@ const Home = () => {
           {/* Featured Property Card with enhanced effects */}
           {featuredProperty && (
             <div className="max-w-6xl mx-auto">
-              <div className="bg-white rounded-3xl shadow-2xl overflow-hidden hover-lift property-card-enhanced glass-morphism">
+              <div className="bg-white rounded-2xl md:rounded-3xl shadow-2xl overflow-hidden hover-lift property-card-enhanced glass-morphism">
                 <div className="grid lg:grid-cols-2 gap-0">
                   {/* Property Image */}
                   <div className="relative overflow-hidden">
@@ -322,23 +322,23 @@ const Home = () => {
                         "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&h=500&fit=crop&crop=center"
                       }
                       alt={featuredProperty.title}
-                      className="w-full h-80 lg:h-full object-cover hover:scale-110 transition-transform duration-700"
+                      className="w-full h-64 md:h-80 lg:h-full object-cover hover:scale-110 transition-transform duration-700"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent"></div>
 
                     {/* Enhanced floating badges */}
-                    <div className="absolute top-6 left-6">
-                      <div className="bg-gradient-primary text-white px-4 py-2 rounded-full text-sm font-semibold shadow-lg pulse-glow interactive-button crystal-shine">
+                    <div className="absolute top-4 md:top-6 left-4 md:left-6">
+                      <div className="bg-gradient-primary text-white px-3 md:px-4 py-1 md:py-2 rounded-full text-xs md:text-sm font-semibold shadow-lg pulse-glow interactive-button crystal-shine">
                         🔥 Featured
                       </div>
                     </div>
 
-                    <button className="absolute top-6 right-6 w-12 h-12 glass-morphism rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110 interactive-button energy-pulse">
-                      <Heart className="h-6 w-6 text-slate-600 hover:text-red-500 transition-colors heartbeat" />
+                    <button className="absolute top-4 md:top-6 right-4 md:right-6 w-10 md:w-12 h-10 md:h-12 glass-morphism rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110 interactive-button energy-pulse">
+                      <Heart className="h-5 md:h-6 w-5 md:w-6 text-slate-600 hover:text-red-500 transition-colors heartbeat" />
                     </button>
 
-                    {/* Bottom stats overlay */}
-                    <div className="absolute bottom-6 left-6 right-6">
+                    {/* Bottom stats overlay - Hidden on mobile for cleaner look */}
+                    <div className="absolute bottom-4 md:bottom-6 left-4 md:left-6 right-4 md:right-6 hidden md:block">
                       <div className="glass-effect rounded-xl p-4 text-white">
                         <div className="flex items-center justify-between text-sm">
                           <div className="flex items-center space-x-4">
@@ -353,7 +353,7 @@ const Home = () => {
                           </div>
                           <div className="flex items-center space-x-1">
                             <MapPin className="h-4 w-4" />
-                            <span>{featuredProperty.address}</span>
+                            <span className="truncate">{featuredProperty.address}</span>
                           </div>
                         </div>
                       </div>
@@ -361,51 +361,51 @@ const Home = () => {
                   </div>
 
                   {/* Property Details */}
-                  <div className="p-8 lg:p-12 flex flex-col justify-between">
+                  <div className="p-6 md:p-8 lg:p-12 flex flex-col justify-between">
                     <div>
-                      <h2 className="text-2xl font-bold text-slate-900 mb-4">
+                      <h2 className="text-xl md:text-2xl font-bold text-slate-900 mb-3 md:mb-4">
                         {featuredProperty.title}
                       </h2>
 
                       {/* Amenities */}
-                      <div className="flex flex-wrap gap-2 mb-6">
+                      <div className="flex flex-wrap gap-2 mb-4 md:mb-6">
                         {featuredProperty.amenities
                           ?.slice(0, 4)
                           .map((amenity, index) => (
                             <span
                               key={index}
-                              className="bg-blue-100 text-blue-800 text-xs font-medium px-3 py-1 rounded-full"
+                              className="bg-blue-100 text-blue-800 text-xs font-medium px-2 md:px-3 py-1 rounded-full"
                             >
                               {amenity}
                             </span>
                           ))}
                       </div>
 
-                      <div className="grid grid-cols-3 gap-6 mb-8">
-                        <div className="text-center p-4 bg-slate-50 rounded-xl">
-                          <div className="text-3xl font-bold text-slate-900 mb-1">
+                      <div className="grid grid-cols-3 gap-3 md:gap-6 mb-6 md:mb-8">
+                        <div className="text-center p-3 md:p-4 bg-slate-50 rounded-xl">
+                          <div className="text-2xl md:text-3xl font-bold text-slate-900 mb-1">
                             {featuredProperty.bedrooms}
                           </div>
-                          <div className="text-sm text-slate-600">Bedrooms</div>
+                          <div className="text-xs md:text-sm text-slate-600">Bedrooms</div>
                         </div>
-                        <div className="text-center p-4 bg-slate-50 rounded-xl">
-                          <div className="text-3xl font-bold text-slate-900 mb-1">
+                        <div className="text-center p-3 md:p-4 bg-slate-50 rounded-xl">
+                          <div className="text-2xl md:text-3xl font-bold text-slate-900 mb-1">
                             {featuredProperty.bathrooms}
                           </div>
-                          <div className="text-sm text-slate-600">
+                          <div className="text-xs md:text-sm text-slate-600">
                             Bathrooms
                           </div>
                         </div>
-                        <div className="text-center p-4 bg-slate-50 rounded-xl">
-                          <div className="text-3xl font-bold text-slate-900 mb-1">
+                        <div className="text-center p-3 md:p-4 bg-slate-50 rounded-xl">
+                          <div className="text-2xl md:text-3xl font-bold text-slate-900 mb-1">
                             {featuredProperty.area.toLocaleString()}
                           </div>
-                          <div className="text-sm text-slate-600">Sq Ft</div>
+                          <div className="text-xs md:text-sm text-slate-600">Sq Ft</div>
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between mb-8">
-                        <div className="price-tag bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 md:mb-8 gap-3 md:gap-0">
+                        <div className="price-tag bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent text-2xl md:text-3xl">
                           {formatPrice(featuredProperty.price)}
                         </div>
                         <Link
@@ -418,7 +418,7 @@ const Home = () => {
 
                       {/* Agent Info */}
                       {featuredProperty.users && (
-                        <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
+                        <div className="flex flex-col md:flex-row md:items-center md:justify-between p-4 bg-slate-50 rounded-xl gap-3 md:gap-0">
                           <div className="flex items-center space-x-3">
                             <img
                               src={
@@ -426,7 +426,7 @@ const Home = () => {
                                 `https://i.pravatar.cc/150?u=${featuredProperty.users.id}`
                               }
                               alt={featuredProperty.users.name}
-                              className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-md"
+                              className="w-10 md:w-12 h-10 md:h-12 rounded-full object-cover border-2 border-white shadow-md"
                             />
                             <div>
                               <div className="text-sm font-semibold text-slate-900">
@@ -440,7 +440,7 @@ const Home = () => {
                           </div>
                           <Link
                             to={`/agent-contact/${featuredProperty.users.id}/${featuredProperty.id}`}
-                            className="btn-secondary text-sm hover-scale inline-block text-center"
+                            className="btn-secondary text-sm hover-scale inline-block text-center w-full md:w-auto"
                           >
                             Contact Agent
                           </Link>
@@ -448,16 +448,16 @@ const Home = () => {
                       )}
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4 mt-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 mt-6 md:mt-8">
                       <Link
                         to={`/schedule-tour/${featuredProperty.id}`}
-                        className="btn-primary interactive-button hover-glow energy-pulse text-center"
+                        className="btn-primary interactive-button hover-glow energy-pulse text-center py-3 md:py-4"
                       >
                         Schedule Tour
                       </Link>
                       <Link
                         to={`/property/${featuredProperty.id}`}
-                        className="border-2 border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 interactive-button hover-lift text-center"
+                        className="border-2 border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white font-semibold py-3 md:py-4 px-6 rounded-xl transition-all duration-300 interactive-button hover-lift text-center"
                       >
                         View Details
                       </Link>
@@ -469,7 +469,7 @@ const Home = () => {
           )}
 
           {/* Enhanced Modern Search Filter */}
-          <div className="mt-16 relative z-50 overflow-visible">
+          <div className="mt-8 md:mt-16 relative z-50 overflow-visible">
             <ModernSearchFilter
               onSearch={handleSearch}
               onFilterChange={handleApplyFilters}
@@ -487,18 +487,34 @@ const Home = () => {
       </section>
 
       {/* Popular Properties */}
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-slate-900 mb-4">
+      <section className="py-12 md:py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 md:px-6">
+          <div className="text-center mb-8 md:mb-16">
+            <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-2 md:mb-4">
               Popular Properties
             </h2>
-            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+            <p className="text-base md:text-lg text-slate-600 max-w-2xl mx-auto">
               Discover our most sought-after properties across Mumbai
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 stagger-children">
+          {/* Mobile: Horizontal Scrollable Cards */}
+          <div className="md:hidden">
+            <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory mobile-scroll px-4">
+              {popularProperties.map((property) => (
+                <div key={property.id} className="flex-none w-72 snap-start property-card-mobile">
+                  <PropertyCard
+                    property={property}
+                    onFavorite={(id) => console.log("Favorite clicked:", id)}
+                    className="w-full"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Desktop: Grid Layout */}
+          <div className="hidden md:grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 stagger-children">
             {popularProperties.map((property) => (
               <div key={property.id}>
                 <PropertyCard
@@ -509,10 +525,10 @@ const Home = () => {
             ))}
           </div>
 
-          <div className="text-center mt-12">
+          <div className="text-center mt-8 md:mt-12">
             <Link
               to="/properties"
-              className="btn-primary interactive-button hover-glow energy-pulse px-8 py-4 text-lg"
+              className="btn-primary interactive-button hover-glow energy-pulse px-6 md:px-8 py-3 md:py-4 text-base md:text-lg"
             >
               View All Properties
             </Link>
@@ -521,78 +537,78 @@ const Home = () => {
       </section>
 
       {/* EasyProp Edge - Feature Services Cards */}
-      <section className="py-20 bg-gradient-to-br from-slate-50 to-blue-50">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-slate-900 mb-4">
+      <section className="py-12 md:py-20 bg-gradient-to-br from-slate-50 to-blue-50">
+        <div className="max-w-7xl mx-auto px-4 md:px-6">
+          <div className="text-center mb-8 md:mb-16">
+            <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-2 md:mb-4">
               EasyProp Edge
             </h2>
-            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+            <p className="text-base md:text-lg text-slate-600 max-w-2xl mx-auto">
               Exclusive services designed to make your property journey seamless
               and secure
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <div className="glass-morphism rounded-2xl p-8 text-center hover-lift interactive-button">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                <CreditCard className="h-8 w-8 text-white" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
+            <div className="glass-morphism rounded-xl md:rounded-2xl p-6 md:p-8 text-center hover-lift interactive-button">
+              <div className="w-12 md:w-16 h-12 md:h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl md:rounded-2xl flex items-center justify-center mx-auto mb-4 md:mb-6">
+                <CreditCard className="h-6 md:h-8 w-6 md:w-8 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-3">
+              <h3 className="text-lg md:text-xl font-bold text-slate-900 mb-2 md:mb-3">
                 Buy on Credit
               </h3>
-              <p className="text-slate-600 mb-6">
+              <p className="text-sm md:text-base text-slate-600 mb-4 md:mb-6">
                 Get your dream home now, pay later.
               </p>
-              <button className="btn-primary w-full interactive-button hover-glow">
+              <button className="btn-primary w-full interactive-button hover-glow text-sm md:text-base py-2 md:py-3">
                 Learn More
               </button>
             </div>
 
-            <div className="glass-morphism rounded-2xl p-8 text-center hover-lift interactive-button">
-              <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                <Verified className="h-8 w-8 text-white" />
+            <div className="glass-morphism rounded-xl md:rounded-2xl p-6 md:p-8 text-center hover-lift interactive-button">
+              <div className="w-12 md:w-16 h-12 md:h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl md:rounded-2xl flex items-center justify-center mx-auto mb-4 md:mb-6">
+                <Verified className="h-6 md:h-8 w-6 md:w-8 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-3">
+              <h3 className="text-lg md:text-xl font-bold text-slate-900 mb-2 md:mb-3">
                 Premium Verified Listings
               </h3>
-              <p className="text-slate-600 mb-6">
+              <p className="text-sm md:text-base text-slate-600 mb-4 md:mb-6">
                 Hand-verified premium projects.
               </p>
-              <button className="btn-primary w-full interactive-button hover-glow">
+              <button className="btn-primary w-full interactive-button hover-glow text-sm md:text-base py-2 md:py-3">
                 Explore
               </button>
             </div>
 
-            <div className="glass-morphism rounded-2xl p-8 text-center hover-lift interactive-button">
-              <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                <Calculator className="h-8 w-8 text-white" />
+            <div className="glass-morphism rounded-xl md:rounded-2xl p-6 md:p-8 text-center hover-lift interactive-button">
+              <div className="w-12 md:w-16 h-12 md:h-16 bg-gradient-to-br from-orange-500 to-red-600 rounded-xl md:rounded-2xl flex items-center justify-center mx-auto mb-4 md:mb-6">
+                <Calculator className="h-6 md:h-8 w-6 md:w-8 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-3">
+              <h3 className="text-lg md:text-xl font-bold text-slate-900 mb-2 md:mb-3">
                 Loan Assistance
               </h3>
-              <p className="text-slate-600 mb-6">
+              <p className="text-sm md:text-base text-slate-600 mb-4 md:mb-6">
                 Check instant home loan eligibility.
               </p>
               <Link
                 to="/emi-calculator"
-                className="btn-primary w-full interactive-button hover-glow block text-center"
+                className="btn-primary w-full interactive-button hover-glow block text-center text-sm md:text-base py-2 md:py-3"
               >
                 Check Eligibility
               </Link>
             </div>
 
-            <div className="glass-morphism rounded-2xl p-8 text-center hover-lift interactive-button">
-              <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                <Shield className="h-8 w-8 text-white" />
+            <div className="glass-morphism rounded-xl md:rounded-2xl p-6 md:p-8 text-center hover-lift interactive-button">
+              <div className="w-12 md:w-16 h-12 md:h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl md:rounded-2xl flex items-center justify-center mx-auto mb-4 md:mb-6">
+                <Shield className="h-6 md:h-8 w-6 md:w-8 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-3">
+              <h3 className="text-lg md:text-xl font-bold text-slate-900 mb-2 md:mb-3">
                 Legal & Home Insurance
               </h3>
-              <p className="text-slate-600 mb-6">
+              <p className="text-sm md:text-base text-slate-600 mb-4 md:mb-6">
                 Secure your property legally.
               </p>
-              <button className="btn-primary w-full interactive-button hover-glow">
+              <button className="btn-primary w-full interactive-button hover-glow text-sm md:text-base py-2 md:py-3">
                 Get Help
               </button>
             </div>
@@ -601,18 +617,18 @@ const Home = () => {
       </section>
 
       {/* Top Picks / Featured Properties Carousel */}
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex items-center justify-between mb-16">
+      <section className="py-12 md:py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 md:px-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 md:mb-16 gap-4 md:gap-0">
             <div>
-              <h2 className="text-4xl font-bold text-slate-900 mb-4">
+              <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-2 md:mb-4">
                 Top Picks by EasyProp
               </h2>
-              <p className="text-lg text-slate-600">
+              <p className="text-base md:text-lg text-slate-600">
                 Handpicked premium properties just for you
               </p>
             </div>
-            <div className="flex space-x-4">
+            <div className="hidden md:flex space-x-4">
               <button className="w-12 h-12 bg-slate-100 hover:bg-slate-200 rounded-full flex items-center justify-center transition-colors">
                 <ChevronLeft className="h-6 w-6 text-slate-600" />
               </button>
@@ -623,21 +639,21 @@ const Home = () => {
           </div>
 
           <div className="overflow-hidden">
-            <div className="flex space-x-6 pb-4">
+            <div className="flex space-x-4 md:space-x-6 pb-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory mobile-scroll px-4 md:px-0">
               {popularProperties.slice(0, 4).map((property, index) => (
-                <div key={property.id} className="flex-none w-80">
+                <div key={property.id} className="flex-none w-72 md:w-80 snap-start property-card-mobile md:property-card-desktop">
                   <div className="property-card-enhanced group">
-                    <div className="relative overflow-hidden">
+                    <div className="relative overflow-hidden rounded-t-2xl">
                       <img
                         src={
                           property.images?.[0] ||
                           "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=300&fit=crop&crop=center"
                         }
                         alt={property.title}
-                        className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-700"
+                        className="w-full h-40 md:h-48 object-cover group-hover:scale-110 transition-transform duration-700"
                       />
                       <div className="absolute top-4 left-4">
-                        <div className="bg-gradient-primary text-white px-3 py-1 rounded-full text-xs font-semibold shadow-lg">
+                        <div className="bg-gradient-primary text-white px-2 md:px-3 py-1 rounded-full text-xs font-semibold shadow-lg">
                           {index === 0
                             ? "🏆 Luxury Pick"
                             : index === 1
@@ -645,36 +661,36 @@ const Home = () => {
                             : "⭐ Editor's Choice"}
                         </div>
                       </div>
-                      <button className="absolute top-4 right-4 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110">
-                        <Heart className="h-5 w-5 text-slate-600 hover:text-red-500 transition-colors" />
+                      <button className="absolute top-4 right-4 w-8 md:w-10 h-8 md:h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110">
+                        <Heart className="h-4 md:h-5 w-4 md:w-5 text-slate-600 hover:text-red-500 transition-colors" />
                       </button>
                     </div>
 
-                    <div className="p-6">
+                    <div className="p-4 md:p-6 bg-white rounded-b-2xl">
                       <div className="flex items-center text-sm text-slate-600 mb-2">
                         <MapPin className="h-4 w-4 mr-1" />
-                        {property.address}
+                        <span className="truncate">{property.address}</span>
                       </div>
-                      <h3 className="text-lg font-semibold text-slate-900 mb-2 line-clamp-2">
+                      <h3 className="text-base md:text-lg font-semibold text-slate-900 mb-2 line-clamp-2">
                         {property.title}
                       </h3>
-                      <div className="price-tag mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                      <div className="price-tag mb-3 md:mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent text-lg md:text-xl">
                         {formatPrice(property.price)}
                       </div>
-                      <div className="flex items-center justify-between text-sm text-slate-600 mb-4">
+                      <div className="flex items-center justify-between text-sm text-slate-600 mb-3 md:mb-4">
                         <span>{property.bedrooms} BHK</span>
                         <span>{property.area} sqft</span>
                       </div>
-                      <div className="flex space-x-3">
+                      <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-3">
                         <Link
                           to={`/agent-contact/${property.user_id}/${property.id}`}
-                          className="flex-1 btn-secondary text-center text-sm"
+                          className="flex-1 btn-secondary text-center text-sm py-2"
                         >
                           Contact
                         </Link>
                         <Link
                           to={`/schedule-tour/${property.id}`}
-                          className="flex-1 btn-primary text-center text-sm"
+                          className="flex-1 btn-primary text-center text-sm py-2"
                         >
                           Book Visit
                         </Link>
@@ -990,45 +1006,45 @@ const Home = () => {
       </section>
 
       {/* Newly Added Properties */}
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex items-center justify-between mb-16">
+      <section className="py-12 md:py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 md:px-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 md:mb-16 gap-4 md:gap-0">
             <div>
-              <h2 className="text-4xl font-bold text-slate-900 mb-4">
+              <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-2 md:mb-4">
                 Freshly Listed Properties
               </h2>
-              <p className="text-lg text-slate-600">
+              <p className="text-base md:text-lg text-slate-600">
                 Latest additions to our premium property collection
               </p>
             </div>
             <Link
               to="/properties"
-              className="btn-primary interactive-button hover-glow"
+              className="btn-primary interactive-button hover-glow text-sm md:text-base px-4 md:px-6 py-2 md:py-3 w-fit"
             >
               View All
             </Link>
           </div>
 
           <div className="overflow-hidden">
-            <div className="flex space-x-6 pb-4">
+            <div className="flex space-x-4 md:space-x-6 pb-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory mobile-scroll px-4 md:px-0">
               {recentProperties.map((property) => (
-                <div key={property.id} className="flex-none w-72">
-                  <div className="property-card-enhanced group">
-                    <div className="relative overflow-hidden">
+                <div key={property.id} className="flex-none w-64 md:w-72 snap-start property-card-mobile md:property-card-desktop">
+                  <div className="property-card-enhanced group bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300">
+                    <div className="relative overflow-hidden rounded-t-2xl">
                       <img
                         src={
                           property.images?.[0] ||
                           "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=300&fit=crop&crop=center"
                         }
                         alt={property.title}
-                        className="w-full h-40 object-cover group-hover:scale-110 transition-transform duration-700"
+                        className="w-full h-36 md:h-40 object-cover group-hover:scale-110 transition-transform duration-700"
                       />
-                      <div className="absolute top-4 left-4">
-                        <div className="bg-green-500 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-lg">
+                      <div className="absolute top-3 md:top-4 left-3 md:left-4">
+                        <div className="bg-green-500 text-white px-2 md:px-3 py-1 rounded-full text-xs font-semibold shadow-lg">
                           🆕 New
                         </div>
                       </div>
-                      <div className="absolute top-4 right-4">
+                      <div className="absolute top-3 md:top-4 right-3 md:right-4">
                         <div className="bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full text-xs font-medium text-slate-600">
                           <Clock className="h-3 w-3 inline mr-1" />
                           {`${Math.round(
@@ -1039,15 +1055,15 @@ const Home = () => {
                       </div>
                     </div>
 
-                    <div className="p-5">
+                    <div className="p-4 md:p-5">
                       <div className="flex items-center text-sm text-slate-600 mb-2">
                         <MapPin className="h-4 w-4 mr-1" />
-                        {property.address}
+                        <span className="truncate">{property.address}</span>
                       </div>
-                      <h3 className="text-lg font-semibold text-slate-900 mb-2 line-clamp-2">
+                      <h3 className="text-base md:text-lg font-semibold text-slate-900 mb-2 line-clamp-2">
                         {property.title}
                       </h3>
-                      <div className="flex items-center justify-between mb-3">
+                      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-3 gap-2 md:gap-0">
                         <div className="price-tag text-lg bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                           {formatPrice(property.price)}
                         </div>
@@ -1055,7 +1071,7 @@ const Home = () => {
                           {property.bedrooms} BHK • {property.area} sqft
                         </div>
                       </div>
-                      <button className="w-full btn-primary text-sm interactive-button hover-glow">
+                      <button className="w-full btn-primary text-sm interactive-button hover-glow py-2">
                         Contact Seller
                       </button>
                     </div>

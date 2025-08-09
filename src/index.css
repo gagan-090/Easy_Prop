@@ -50,6 +50,58 @@ html {
   background: #718096;
 }
 
+/* Hide scrollbar for mobile horizontal scrolling */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* Internet Explorer 10+ */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Safari and Chrome */
+}
+
+/* Mobile touch scrolling improvements */
+.mobile-scroll {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* Snap scrolling for property cards */
+.snap-x {
+  scroll-snap-type: x mandatory;
+}
+
+.snap-start {
+  scroll-snap-align: start;
+}
+
+.snap-center {
+  scroll-snap-align: center;
+}
+
+/* Mobile-specific property card optimizations */
+@media (max-width: 768px) {
+  .property-card-mobile {
+    min-width: 280px;
+    max-width: 320px;
+  }
+  
+  .hero-mobile-padding {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  .mobile-text-sm {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+  
+  .mobile-text-xs {
+    font-size: 0.75rem;
+    line-height: 1rem;
+  }
+}
+
 /* ===== Component Utilities ===== */
 
 /* Gradient Utilities */
