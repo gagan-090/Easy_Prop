@@ -805,14 +805,34 @@ const Navbar = () => {
       {/* Mobile Menu */}
       <AnimatePresence>
         {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3 }}
-            className="lg:hidden border-t border-gray-200 dark:border-gray-700 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-b-2xl"
-          >
-            <div className="px-6 py-4 space-y-2">
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="lg:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
+              onClick={() => setIsOpen(false)}
+            />
+            
+            {/* Half Screen Mobile Menu */}
+            <motion.div
+              initial={{ opacity: 0, y: '100%' }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: '100%' }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
+              className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/98 dark:bg-gray-900/98 backdrop-blur-xl rounded-t-3xl shadow-2xl border-t border-gray-200 dark:border-gray-700"
+              style={{ maxHeight: '60vh' }}
+            >
+              {/* Handle Bar */}
+              <div className="flex justify-center py-3">
+                <div className="w-12 h-1 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
+              </div>
+              
+              {/* Scrollable Content */}
+              <div className="overflow-y-auto px-6 pb-6" style={{ maxHeight: 'calc(60vh - 60px)' }}>
+                <div className="space-y-2">
               {navItems.map((item, index) => (
                 <motion.div
                   key={item.name}
@@ -992,8 +1012,10 @@ const Navbar = () => {
                   </>
                 )}
               </motion.div>
-            </div>
-          </motion.div>
+                </div>
+              </div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </motion.nav>

@@ -456,20 +456,20 @@ const ModernSearchFilter = ({
 
   return (
     <div className="search-filter-container relative w-full max-w-7xl mx-auto" ref={dropdownRef}>
-      {/* Quick Search Options */}
-      <div className="mb-6">
-        <div className="flex flex-wrap items-center justify-center gap-3 mb-4">
+      {/* Quick Search Options - Mobile Optimized */}
+      <div className="mb-4 md:mb-6">
+        <div className="flex flex-wrap items-center justify-center gap-2 md:gap-3 mb-3 md:mb-4">
           {quickSearchOptions.map((option, index) => {
             const IconComponent = option.icon;
             return (
               <button
                 key={index}
                 onClick={() => handleQuickSearch(option)}
-                className={`group ${option.bgColor} backdrop-blur-sm border border-transparent hover:border-current rounded-2xl px-6 py-4 shadow-lg hover:shadow-xl transition-all duration-300 flex items-center space-x-3 transform hover:scale-105`}
+                className={`group ${option.bgColor} backdrop-blur-sm border border-transparent hover:border-current rounded-xl md:rounded-2xl px-3 md:px-6 py-2 md:py-4 shadow-lg hover:shadow-xl transition-all duration-300 flex items-center space-x-2 md:space-x-3 transform hover:scale-105`}
                 aria-label={`Quick search for ${option.label}`}
               >
-                <IconComponent className={`h-5 w-5 ${option.color}`} />
-                <span className={`${option.color} font-semibold text-sm`}>
+                <IconComponent className={`h-4 md:h-5 w-4 md:w-5 ${option.color}`} />
+                <span className={`${option.color} font-semibold text-xs md:text-sm`}>
                   {option.label}
                 </span>
               </button>
@@ -477,28 +477,28 @@ const ModernSearchFilter = ({
           })}
         </div>
 
-        {/* Popular Searches */}
+        {/* Popular Searches - Mobile Optimized */}
         <div className="text-center">
-          <div className="inline-flex items-center space-x-4 text-sm">
+          <div className="flex flex-col md:inline-flex md:flex-row items-center space-y-2 md:space-y-0 md:space-x-4 text-sm">
             <span className={`font-medium ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
               Popular:
             </span>
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center justify-center gap-2">
               {popularLocations.slice(0, 4).map((location) => (
                 <button
                   key={location}
                   onClick={() => handleFilterChange("location", location)}
-                  className="text-blue-500 hover:text-blue-700 hover:underline transition-colors font-medium"
+                  className="text-blue-500 hover:text-blue-700 hover:underline transition-colors font-medium text-xs md:text-sm"
                 >
                   {location}
                 </button>
               ))}
-              <span className={darkMode ? 'text-gray-500' : 'text-gray-400'}>•</span>
+              <span className={`hidden md:inline ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>•</span>
               {popularTypes.slice(0, 3).map((type) => (
                 <button
                   key={type}
                   onClick={() => handleFilterChange("propertyType", type.toLowerCase())}
-                  className="text-blue-500 hover:text-blue-700 hover:underline transition-colors font-medium"
+                  className="text-blue-500 hover:text-blue-700 hover:underline transition-colors font-medium text-xs md:text-sm"
                 >
                   {type}
                 </button>
@@ -508,119 +508,139 @@ const ModernSearchFilter = ({
         </div>
       </div>
 
-      {/* Enhanced Search Bar */}
+      {/* Enhanced Search Bar - Mobile Optimized */}
       <form onSubmit={handleSearch} className="relative">
-        <div className={`flex items-stretch ${themeClasses.container} backdrop-blur-md rounded-3xl shadow-2xl border overflow-hidden transition-all duration-300`}>
+        <div className={`flex flex-col md:flex-row items-stretch ${themeClasses.container} backdrop-blur-md rounded-2xl md:rounded-3xl shadow-2xl border overflow-hidden transition-all duration-300`}>
           
           {/* Main Search Input */}
-          <div className="flex-1 flex items-center px-6 py-5 relative">
-            <Search className={`h-6 w-6 mr-4 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+          <div className="flex-1 flex items-center px-4 md:px-6 py-3 md:py-5 relative">
+            <Search className={`h-5 md:h-6 w-5 md:w-6 mr-3 md:mr-4 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} />
             <input
               type="text"
-              placeholder="Search properties, locations, or keywords..."
+              placeholder="Search properties, locations..."
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
                 debouncedSearch(e.target.value);
               }}
-              className={`flex-1 border-none outline-none text-lg font-medium bg-transparent ${darkMode ? 'text-white placeholder-gray-400' : 'text-gray-900 placeholder-gray-500'}`}
+              className={`flex-1 border-none outline-none text-base md:text-lg font-medium bg-transparent ${darkMode ? 'text-white placeholder-gray-400' : 'text-gray-900 placeholder-gray-500'}`}
               aria-label="Search properties"
             />
             {loading && (
-              <Loader2 className="h-5 w-5 text-gray-400 animate-spin mr-2" />
+              <Loader2 className="h-4 md:h-5 w-4 md:w-5 text-gray-400 animate-spin mr-2" />
             )}
           </div>
 
-          {/* Dark Mode Toggle */}
-          {onDarkModeToggle && (
+          {/* Mobile Controls Row */}
+          <div className="flex items-stretch border-t md:border-t-0 md:border-l border-gray-200 dark:border-gray-700">
+            {/* Dark Mode Toggle - Hidden on mobile */}
+            {onDarkModeToggle && (
+              <button
+                type="button"
+                onClick={onDarkModeToggle}
+                className={`hidden md:flex items-center px-4 py-5 border-r ${darkMode ? 'border-gray-700 hover:bg-gray-800' : 'border-gray-200 hover:bg-gray-50'} transition-colors`}
+                aria-label="Toggle dark mode"
+              >
+                {darkMode ? (
+                  <Sun className="h-5 w-5 text-yellow-500" />
+                ) : (
+                  <Moon className="h-5 w-5 text-gray-600" />
+                )}
+              </button>
+            )}
+
+            {/* Filter Toggle Button */}
             <button
               type="button"
-              onClick={onDarkModeToggle}
-              className={`flex items-center px-4 py-5 border-l ${darkMode ? 'border-gray-700 hover:bg-gray-800' : 'border-gray-200 hover:bg-gray-50'} transition-colors`}
-              aria-label="Toggle dark mode"
+              onClick={handleToggleDropdown}
+              className={`flex items-center px-4 md:px-6 py-3 md:py-5 border-r border-gray-200 dark:border-gray-700 ${darkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'} transition-all duration-200`}
+              aria-label="Toggle filters"
+              aria-expanded={isOpen}
             >
-              {darkMode ? (
-                <Sun className="h-5 w-5 text-yellow-500" />
-              ) : (
-                <Moon className="h-5 w-5 text-gray-600" />
-              )}
-            </button>
-          )}
-
-          {/* Filter Toggle Button */}
-          <button
-            type="button"
-            onClick={handleToggleDropdown}
-            className={`flex items-center px-6 py-5 border-l ${darkMode ? 'border-gray-700 hover:bg-gray-800' : 'border-gray-200 hover:bg-gray-50'} transition-all duration-200`}
-            aria-label="Toggle filters"
-            aria-expanded={isOpen}
-          >
-            <Filter className={`h-5 w-5 mr-3 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`} />
-            <span className={`font-semibold ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
-              Filters
-            </span>
-            {activeFiltersCount > 0 && (
-              <span className="ml-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center font-bold animate-pulse">
-                {activeFiltersCount}
+              <Filter className={`h-4 md:h-5 w-4 md:w-5 mr-2 md:mr-3 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`} />
+              <span className={`font-semibold text-sm md:text-base ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+                Filters
               </span>
-            )}
-            <ChevronDown
-              className={`h-4 w-4 ml-3 transition-transform duration-200 ${
-                isOpen ? "rotate-180" : ""
-              } ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}
-            />
-          </button>
+              {activeFiltersCount > 0 && (
+                <span className="ml-2 md:ml-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white text-xs rounded-full h-5 w-5 md:h-6 md:w-6 flex items-center justify-center font-bold animate-pulse">
+                  {activeFiltersCount}
+                </span>
+              )}
+              <ChevronDown
+                className={`h-3 md:h-4 w-3 md:w-4 ml-2 md:ml-3 transition-transform duration-200 ${
+                  isOpen ? "rotate-180" : ""
+                } ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}
+              />
+            </button>
 
-          {/* Enhanced Search Button */}
-          <button
-            type="submit"
-            className="px-8 py-5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold text-lg transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
-          >
-            <Search className="h-5 w-5 mr-2" />
-            <span>Search</span>
-          </button>
+            {/* Enhanced Search Button */}
+            <button
+              type="submit"
+              className="flex-1 md:flex-none px-4 md:px-8 py-3 md:py-5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold text-sm md:text-lg transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center justify-center"
+            >
+              <Search className="h-4 md:h-5 w-4 md:w-5 mr-1 md:mr-2" />
+              <span>Search</span>
+            </button>
+          </div>
         </div>
       </form>
 
-      {/* Advanced Filters Dropdown */}
+      {/* Simple Login/Signup Options - Mobile Only */}
+      <div className="md:hidden mt-4 flex items-center justify-center space-x-4">
+        <a
+          href="/login"
+          className="text-blue-600 hover:text-blue-700 font-medium text-sm transition-colors"
+        >
+          Login
+        </a>
+        <span className="text-gray-400">•</span>
+        <a
+          href="/register"
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-colors"
+        >
+          Sign Up
+        </a>
+      </div>
+
+      {/* Advanced Filters Dropdown - Mobile Optimized */}
       {isOpen && (
         <>
           <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[998]" onClick={handleClose} />
-          <div className={`absolute top-full left-0 right-0 mt-4 ${themeClasses.dropdown} backdrop-blur-md rounded-3xl shadow-2xl border z-[999] max-h-[80vh] overflow-y-auto`}>
-            <div className="p-8">
-              <div className="flex items-center justify-between mb-6">
-                <h3 id="filter-dialog-title" className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                  Advanced Filters
+          <div className={`absolute top-full left-0 right-0 mt-2 md:mt-4 ${themeClasses.dropdown} backdrop-blur-md rounded-2xl md:rounded-3xl shadow-2xl border z-[999] max-h-[70vh] md:max-h-[80vh] overflow-y-auto`}>
+            <div className="p-4 md:p-8">
+              <div className="flex items-center justify-between mb-4 md:mb-6">
+                <h3 id="filter-dialog-title" className={`text-lg md:text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                  Filters
                 </h3>
-                <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-2 md:space-x-3">
                   <button
                     onClick={clearFilters}
-                    className="text-sm text-red-500 hover:text-red-700 font-medium transition-colors"
+                    className="text-xs md:text-sm text-red-500 hover:text-red-700 font-medium transition-colors"
                   >
                     Clear All
                   </button>
                   <button 
                     onClick={handleClose} 
-                    className={`p-2 rounded-lg hover:bg-gray-100 ${darkMode ? 'hover:bg-gray-700 text-gray-400' : 'text-gray-500'} transition-colors`}
+                    className={`p-1 md:p-2 rounded-lg hover:bg-gray-100 ${darkMode ? 'hover:bg-gray-700 text-gray-400' : 'text-gray-500'} transition-colors`}
                   >
-                    <X className="h-5 w-5" />
+                    <X className="h-4 md:h-5 w-4 md:w-5" />
                   </button>
                 </div>
               </div>
               
-              {/* Simplified Filter Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-6">
+              {/* Mobile-First Filter Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6 mb-4 md:mb-6">
                 
                 {/* Listing Type */}
                 <div>
-                  <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
-                    <IndianRupee className="inline h-4 w-4 mr-1" />
+                  <label className={`block text-xs md:text-sm font-medium mb-1 md:mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                    <IndianRupee className="inline h-3 md:h-4 w-3 md:w-4 mr-1" />
                     Listing Type
                   </label>
                   <select
                     value={filters.listingType}
                     onChange={(e) => handleFilterChange("listingType", e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-lg ${themeClasses.input}`}
+                    className={`w-full px-2 md:px-3 py-2 border rounded-lg text-sm md:text-base ${themeClasses.input}`}
                   >
                     {listingTypes.map((type) => (
                       <option key={type.value} value={type.value}>
@@ -632,14 +652,14 @@ const ModernSearchFilter = ({
 
                 {/* Property Type */}
                 <div>
-                  <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
-                    <Building className="inline h-4 w-4 mr-1" />
+                  <label className={`block text-xs md:text-sm font-medium mb-1 md:mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                    <Building className="inline h-3 md:h-4 w-3 md:w-4 mr-1" />
                     Property Type
                   </label>
                   <select
                     value={filters.propertyType}
                     onChange={(e) => handleFilterChange("propertyType", e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-lg ${themeClasses.input}`}
+                    className={`w-full px-2 md:px-3 py-2 border rounded-lg text-sm md:text-base ${themeClasses.input}`}
                   >
                     <option value="">All Types</option>
                     {propertyTypes.map((type) => (
@@ -652,8 +672,8 @@ const ModernSearchFilter = ({
 
                 {/* City */}
                 <div className="relative">
-                  <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
-                    <MapPin className="inline h-4 w-4 mr-1" />
+                  <label className={`block text-xs md:text-sm font-medium mb-1 md:mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                    <MapPin className="inline h-3 md:h-4 w-3 md:w-4 mr-1" />
                     City
                   </label>
                   <input
@@ -661,18 +681,18 @@ const ModernSearchFilter = ({
                     placeholder="Enter city"
                     value={filters.city}
                     onChange={(e) => handleLocationInput(e.target.value)}
-                    className={`w-full px-3 py-2 pr-10 border rounded-lg ${themeClasses.input}`}
+                    className={`w-full px-2 md:px-3 py-2 pr-8 md:pr-10 border rounded-lg text-sm md:text-base ${themeClasses.input}`}
                   />
                   <button
                     type="button"
                     onClick={getCurrentLocation}
                     disabled={useCurrentLocation}
-                    className="absolute right-2 top-8 text-blue-500 hover:text-blue-700 disabled:opacity-50"
+                    className="absolute right-2 top-6 md:top-8 text-blue-500 hover:text-blue-700 disabled:opacity-50"
                   >
                     {useCurrentLocation ? (
-                      <div className="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+                      <div className="animate-spin h-3 md:h-4 w-3 md:w-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
                     ) : (
-                      <Map className="h-4 w-4" />
+                      <Map className="h-3 md:h-4 w-3 md:w-4" />
                     )}
                   </button>
                   
@@ -686,7 +706,7 @@ const ModernSearchFilter = ({
                             handleFilterChange("city", suggestion);
                             setShowLocationSuggestions(false);
                           }}
-                          className={`w-full text-left px-3 py-2 hover:bg-blue-50 ${darkMode ? 'hover:bg-gray-700' : ''} transition-colors text-sm`}
+                          className={`w-full text-left px-2 md:px-3 py-2 hover:bg-blue-50 ${darkMode ? 'hover:bg-gray-700' : ''} transition-colors text-xs md:text-sm`}
                         >
                           <MapPin className="inline h-3 w-3 mr-2 text-gray-400" />
                           {suggestion}
@@ -698,14 +718,14 @@ const ModernSearchFilter = ({
 
                 {/* Bedrooms */}
                 <div>
-                  <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
-                    <Home className="inline h-4 w-4 mr-1" />
+                  <label className={`block text-xs md:text-sm font-medium mb-1 md:mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                    <Home className="inline h-3 md:h-4 w-3 md:w-4 mr-1" />
                     Bedrooms
                   </label>
                   <select
                     value={filters.bedrooms}
                     onChange={(e) => handleFilterChange("bedrooms", e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-lg ${themeClasses.input}`}
+                    className={`w-full px-2 md:px-3 py-2 border rounded-lg text-sm md:text-base ${themeClasses.input}`}
                   >
                     <option value="">Any</option>
                     {bedroomOptions.map((option) => (
@@ -718,8 +738,8 @@ const ModernSearchFilter = ({
 
                 {/* Price Range */}
                 <div>
-                  <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
-                    <IndianRupee className="inline h-4 w-4 mr-1" />
+                  <label className={`block text-xs md:text-sm font-medium mb-1 md:mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                    <IndianRupee className="inline h-3 md:h-4 w-3 md:w-4 mr-1" />
                     Price Range
                   </label>
                   <div className="space-y-2">
@@ -728,31 +748,31 @@ const ModernSearchFilter = ({
                       placeholder="Min Price (₹)"
                       value={filters.priceRange.min}
                       onChange={(e) => handlePriceChange("min", e.target.value)}
-                      className={`w-full px-3 py-2 border rounded-lg ${themeClasses.input}`}
+                      className={`w-full px-2 md:px-3 py-2 border rounded-lg text-sm md:text-base ${themeClasses.input}`}
                     />
                     <input
                       type="number"
                       placeholder="Max Price (₹)"
                       value={filters.priceRange.max}
                       onChange={(e) => handlePriceChange("max", e.target.value)}
-                      className={`w-full px-3 py-2 border rounded-lg ${themeClasses.input}`}
+                      className={`w-full px-2 md:px-3 py-2 border rounded-lg text-sm md:text-base ${themeClasses.input}`}
                     />
                   </div>
                 </div>
               </div>
 
-              {/* Additional Filters */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+              {/* Additional Filters - Mobile Optimized */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-4 md:mb-6">
                 
                 {/* Locality */}
                 <div>
-                  <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                  <label className={`block text-xs md:text-sm font-medium mb-1 md:mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
                     Locality
                   </label>
                   <select
                     value={filters.locality}
                     onChange={(e) => handleFilterChange("locality", e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-lg ${themeClasses.input}`}
+                    className={`w-full px-2 md:px-3 py-2 border rounded-lg text-sm md:text-base ${themeClasses.input}`}
                   >
                     <option value="">Any Locality</option>
                     {filterOptions.localities.map((locality) => (
@@ -765,13 +785,13 @@ const ModernSearchFilter = ({
 
                 {/* Furnishing */}
                 <div>
-                  <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                  <label className={`block text-xs md:text-sm font-medium mb-1 md:mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
                     Furnishing
                   </label>
                   <select
                     value={filters.furnishing}
                     onChange={(e) => handleFilterChange("furnishing", e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-lg ${themeClasses.input}`}
+                    className={`w-full px-2 md:px-3 py-2 border rounded-lg text-sm md:text-base ${themeClasses.input}`}
                   >
                     <option value="">Any Furnishing</option>
                     {furnishingOptions.map((option) => (
@@ -784,7 +804,7 @@ const ModernSearchFilter = ({
 
                 {/* Property Age */}
                 <div>
-                  <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                  <label className={`block text-xs md:text-sm font-medium mb-1 md:mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
                     Property Age
                   </label>
                   <select

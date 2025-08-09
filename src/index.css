@@ -100,6 +100,44 @@ html {
     font-size: 0.75rem;
     line-height: 1rem;
   }
+  
+  /* Mobile search filter optimizations */
+  .search-filter-container {
+    padding: 0 1rem;
+  }
+  
+  .search-filter-dropdown {
+    left: 1rem;
+    right: 1rem;
+    margin-top: 0.5rem;
+  }
+  
+  /* Mobile menu optimizations */
+  .mobile-menu-backdrop {
+    backdrop-filter: blur(4px);
+  }
+  
+  .mobile-menu-content {
+    border-radius: 1.5rem 1.5rem 0 0;
+    box-shadow: 0 -10px 25px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Touch-friendly button sizes */
+  .mobile-touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Improved form inputs for mobile */
+  .mobile-input {
+    font-size: 16px; /* Prevents zoom on iOS */
+    padding: 0.75rem;
+  }
+  
+  /* Better spacing for mobile forms */
+  .mobile-form-spacing > * + * {
+    margin-top: 1rem;
+  }
 }
 
 /* ===== Component Utilities ===== */
