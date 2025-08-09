@@ -1,678 +1,169 @@
-# EasyProp Firestore Database Setup Guide
+# Database Setup Instructions
 
-## Overview
+## Required SQL Migrations
 
-This guide provides comprehensive instructions for setting up the Firestore database structure for the EasyProp real estate platform. All data is user-specific and isolated for security and privacy.
+To enable the full user profile functionality with tours, you need to run the following SQL commands in your Supabase SQL Editor:
 
-## Database Architecture
+### 1. Create Tours Table (if not already created)
 
-### Collections Structure
+```sql
+-- Simple Tours table migration (without complex functions)
+-- Run this SQL in your Supabase SQL Editor to add basic tour functionality
 
-```
-easyprop-firestore/
-├── users/                    # User profiles and settings
-├── properties/               # Property listings
-├── leads/                    # Customer inquiries and leads
-├── revenue/                  # Revenue tracking
-├── analytics/                # Analytics data
-├── notifications/            # User notifications
-├── settings/                 # App-wide settings
-└── subscriptions/            # User subscription data
-```
+-- Tours table
+CREATE TABLE IF NOT EXISTS tours (
+    id TEXT PRIMARY KEY DEFAULT 'tour_' || extract(epoch from now()) || '_' || substr(md5(random()::text), 1, 9),
+    property_id TEXT NOT NULL,
+    property_owner_id TEXT NOT NULL,
 
-## Collection Schemas
+    -- Visitor Information
+    visitor_name TEXT NOT NULL,
+    visitor_email TEXT NOT NULL,
+    visitor_phone TEXT NOT NULL,
+    visitor_message TEXT,
 
-### 1. Users Collection (`users`)
+    -- Tour Details
+    tour_date DATE NOT NULL,
+    tour_time TIME NOT NULL,
 
-**Document ID**: User UID from Firebase Auth
+    -- Status Management
+    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'cancelled', 'completed', 'no_show')),
 
-```javascript
-{
-  // Basic Information
-  uid: "string",                    // Firebase Auth UID
-  email: "string",                  // User email
-  name: "string",                   // Full name
-  phone: "string",                  // Phone number (optional)
-  photoURL: "string",               // Profile picture URL (optional)
+    -- Tour Type
+    tour_type TEXT DEFAULT 'physical' CHECK (tour_type IN ('physical', 'virtual', 'both')),
 
-  // Timestamps
-  createdAt: "timestamp",           // Account creation date
-  updatedAt: "timestamp",           // Last profile update
-  lastLoginAt: "timestamp",         // Last login time
+    -- Timestamps
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
 
-  // Statistics (auto-calculated)
-  stats: {
-    totalProperties: 0,             // Total properties added
-    propertiesForSale: 0,           // Properties for sale
-    propertiesForRent: 0,           // Properties for rent
-    totalCustomers: 0,              // Total unique customers
-    totalCities: 0,                 // Cities with properties
-    totalRevenue: 0,                // Total revenue earned
-    monthlyRevenue: 0,              // Current month revenue
-    totalLeads: 0,                  // Total leads received
-    activeLeads: 0,                 // Currently active leads
-    convertedLeads: 0               // Successfully converted leads
-  },
+-- Create indexes for better performance
+CREATE INDEX IF NOT EXISTS idx_tours_property_id ON tours(property_id);
+CREATE INDEX IF NOT EXISTS idx_tours_property_owner_id ON tours(property_owner_id);
+CREATE INDEX IF NOT EXISTS idx_tours_status ON tours(status);
+CREATE INDEX IF NOT EXISTS idx_tours_tour_date ON tours(tour_date);
+CREATE INDEX IF NOT EXISTS idx_tours_visitor_email ON tours(visitor_email);
+CREATE INDEX IF NOT EXISTS idx_tours_created_at ON tours(created_at);
 
-  // User Preferences
-  preferences: {
-    theme: "light",                 // UI theme: "light" | "dark" | "system"
-    notifications: true,            // Email notifications enabled
-    emailUpdates: true,             // Marketing emails enabled
-    language: "en",                 // Preferred language
-    timezone: "UTC"                 // User timezone
-  },
+-- Enable Row Level Security (RLS)
+ALTER TABLE tours ENABLE ROW LEVEL SECURITY;
 
-  // Profile Details
-  profile: {
-    bio: "string",                  // User bio/description
-    address: "string",              // Business address
-    website: "string",              // Website URL
-    socialMedia: {
-      facebook: "string",
-      twitter: "string",
-      linkedin: "string",
-      instagram: "string"
-    }
-  },
+-- Create RLS policies for tours
+-- Property owners can see tours for their properties
+CREATE POLICY "Property owners can view tours for their properties" ON tours
+    FOR SELECT USING (auth.uid()::text = property_owner_id);
 
-  // Account Status
-  status: "active",                 // "active" | "suspended" | "deleted"
-  emailVerified: false,             // Email verification status
-  phoneVerified: false,             // Phone verification status
+-- Property owners can update tours for their properties
+CREATE POLICY "Property owners can update tours for their properties" ON tours
+    FOR UPDATE USING (auth.uid()::text = property_owner_id);
 
-  // Subscription Info
-  subscription: {
-    plan: "free",                   // "free" | "basic" | "pro" | "enterprise"
-    status: "active",               // "active" | "cancelled" | "expired"
-    startDate: "timestamp",
-    endDate: "timestamp",
-    features: []                    // Array of enabled features
-  }
-}
+-- Anyone can insert tours (for scheduling)
+CREATE POLICY "Anyone can schedule tours" ON tours
+    FOR INSERT WITH CHECK (true);
+
+-- Create updated_at trigger function if it doesn't exist
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create updated_at trigger
+CREATE TRIGGER update_tours_updated_at
+    BEFORE UPDATE ON tours
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 ```
 
-### 2. Properties Collection (`properties`)
+### 2. Add visitor_user_id Column (Required for User Profile)
 
-**Document ID**: Auto-generated
+```sql
+-- Add visitor_user_id column to tours table for better user tracking
+-- This allows us to link tours to registered users while still supporting anonymous bookings
 
-```javascript
-{
-  // Basic Information
-  id: "string",                     // Auto-generated document ID
-  userId: "string",                 // Owner's user ID
-  title: "string",                  // Property title
-  description: "string",            // Detailed description
+-- Add the visitor_user_id column
+ALTER TABLE tours ADD COLUMN IF NOT EXISTS visitor_user_id TEXT;
 
-  // Property Type & Category
-  type: "sale",                     // "sale" | "rent" | "lease"
-  category: "residential",          // "residential" | "commercial" | "industrial" | "land"
-  propertyType: "apartment",        // "apartment" | "villa" | "house" | "office" | "shop" | "warehouse"
+-- Create index for better performance
+CREATE INDEX IF NOT EXISTS idx_tours_visitor_user_id ON tours(visitor_user_id);
 
-  // Pricing
-  price: 0,                         // Property price in currency
-  currency: "INR",                  // Currency code
-  pricePerSqft: 0,                  // Price per square foot
-  negotiable: true,                 // Price negotiable flag
+-- Add RLS policy for users to view their own scheduled tours
+CREATE POLICY "Users can view their own scheduled tours" ON tours
+    FOR SELECT USING (
+        auth.uid()::text = visitor_user_id OR
+        auth.email() = visitor_email
+    );
 
-  // Property Details
-  area: 0,                          // Total area in sq ft
-  builtUpArea: 0,                   // Built-up area in sq ft
-  carpetArea: 0,                    // Carpet area in sq ft
-  bedrooms: 0,                      // Number of bedrooms
-  bathrooms: 0,                     // Number of bathrooms
-  balconies: 0,                     // Number of balconies
-  parking: 0,                       // Number of parking spaces
-  floor: 0,                         // Floor number
-  totalFloors: 0,                   // Total floors in building
-
-  // Location
-  address: "string",                // Full address
-  city: "string",                   // City name
-  state: "string",                  // State name
-  country: "India",                 // Country
-  pincode: "string",                // Postal code
-  locality: "string",               // Locality/area name
-  landmark: "string",               // Nearby landmark
-  coordinates: {
-    latitude: 0,                    // GPS latitude
-    longitude: 0                    // GPS longitude
-  },
-
-  // Media
-  images: [],                       // Array of image URLs
-  videos: [],                       // Array of video URLs
-  virtualTour: "string",            // Virtual tour URL
-  floorPlan: "string",              // Floor plan image URL
-
-  // Features & Amenities
-  amenities: [],                    // Array of amenities
-  features: [],                     // Array of special features
-  furnishing: "unfurnished",        // "furnished" | "semi-furnished" | "unfurnished"
-
-  // Property Status
-  status: "active",                 // "active" | "sold" | "rented" | "inactive" | "pending"
-  availability: "immediate",        // "immediate" | "under-construction" | "ready-to-move"
-  possessionDate: "timestamp",      // Expected possession date
-
-  // Marketing
-  featured: false,                  // Featured listing flag
-  premium: false,                   // Premium listing flag
-  verified: false,                  // Verification status
-
-  // Analytics
-  views: 0,                         // Total views
-  inquiries: 0,                     // Total inquiries
-  favorites: 0,                     // Times favorited
-  shares: 0,                        // Times shared
-
-  // SEO & Search
-  tags: [],                         // Search tags
-  keywords: [],                     // SEO keywords
-
-  // Timestamps
-  createdAt: "timestamp",           // Creation date
-  updatedAt: "timestamp",           // Last update
-  publishedAt: "timestamp",         // Publication date
-  expiresAt: "timestamp",           // Listing expiry date
-
-  // Additional Info
-  ageOfProperty: 0,                 // Age in years
-  facing: "north",                  // Direction facing
-  source: "direct",                 // "direct" | "broker" | "builder"
-
-  // Legal
-  approvals: [],                    // Legal approvals
-  documents: [],                    // Document URLs
-
-  // Contact Preferences
-  contactPreference: "both",        // "phone" | "email" | "both"
-  bestTimeToCall: "anytime"         // Preferred contact time
-}
+-- Update existing RLS policy to allow users to view their tours
+DROP POLICY IF EXISTS "Anyone can schedule tours" ON tours;
+CREATE POLICY "Anyone can schedule tours" ON tours
+    FOR INSERT WITH CHECK (true);
 ```
 
-### 3. Leads Collection (`leads`)
+### 3. Ensure Favorites Table Exists
 
-**Document ID**: Auto-generated
+```sql
+-- Create favorites table if it doesn't exist
+CREATE TABLE IF NOT EXISTS favorites (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id TEXT NOT NULL,
+    property_id TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(user_id, property_id)
+);
 
-```javascript
-{
-  // Basic Information
-  id: "string",                     // Auto-generated document ID
-  userId: "string",                 // Property owner's user ID
-  propertyId: "string",             // Related property ID
+-- Create indexes
+CREATE INDEX IF NOT EXISTS idx_favorites_user_id ON favorites(user_id);
+CREATE INDEX IF NOT EXISTS idx_favorites_property_id ON favorites(property_id);
 
-  // Lead Information
-  name: "string",                   // Lead's name
-  email: "string",                  // Lead's email
-  phone: "string",                  // Lead's phone
+-- Enable RLS
+ALTER TABLE favorites ENABLE ROW LEVEL SECURITY;
 
-  // Inquiry Details
-  message: "string",                // Inquiry message
-  budget: "string",                 // Budget range
-  requirements: "string",           // Specific requirements
+-- RLS policies
+CREATE POLICY "Users can view their own favorites" ON favorites
+    FOR SELECT USING (auth.uid()::text = user_id);
 
-  // Lead Classification
-  status: "new",                    // "new" | "contacted" | "qualified" | "converted" | "closed" | "ignored"
-  priority: "medium",               // "low" | "medium" | "high" | "urgent"
-  source: "website",                // "website" | "referral" | "social" | "advertisement" | "direct"
+CREATE POLICY "Users can add to their favorites" ON favorites
+    FOR INSERT WITH CHECK (auth.uid()::text = user_id);
 
-  // Contact Information
-  contactMethod: "email",           // "email" | "phone" | "whatsapp" | "chat"
-  preferredTime: "anytime",         // Preferred contact time
-
-  // Lead Scoring
-  score: 0,                         // Lead score (0-100)
-  rating: 0,                        // Lead rating (1-5 stars)
-
-  // Follow-up
-  lastContactAt: "timestamp",       // Last contact date
-  nextFollowUp: "timestamp",        // Next follow-up date
-  followUpCount: 0,                 // Number of follow-ups
-
-  // Additional Details
-  location: "string",               // Lead's location
-  occupation: "string",             // Lead's occupation
-  company: "string",                // Company name
-
-  // Timestamps
-  createdAt: "timestamp",           // Lead creation date
-  updatedAt: "timestamp",           // Last update
-
-  // Notes & History
-  notes: [],                        // Array of notes
-  history: [],                      // Activity history
-
-  // Conversion Tracking
-  convertedAt: "timestamp",         // Conversion date
-  conversionValue: 0,               // Deal value
-
-  // Communication Log
-  communications: [
-    {
-      type: "email",                // "email" | "phone" | "meeting" | "whatsapp"
-      date: "timestamp",
-      subject: "string",
-      content: "string",
-      status: "sent"                // "sent" | "delivered" | "read" | "replied"
-    }
-  ]
-}
+CREATE POLICY "Users can remove from their favorites" ON favorites
+    FOR DELETE USING (auth.uid()::text = user_id);
 ```
 
-### 4. Revenue Collection (`revenue`)
+## How to Run These Migrations
 
-**Document ID**: Auto-generated
+1. Go to your Supabase Dashboard
+2. Navigate to the SQL Editor
+3. Copy and paste each SQL block above
+4. Run them one by one
+5. Verify that the tables and columns are created successfully
 
-```javascript
-{
-  // Basic Information
-  id: "string",                     // Auto-generated document ID
-  userId: "string",                 // User ID
-  propertyId: "string",             // Related property ID (optional)
-  leadId: "string",                 // Related lead ID (optional)
+## Features Enabled After Migration
 
-  // Revenue Details
-  amount: 0,                        // Revenue amount
-  currency: "INR",                  // Currency code
-  type: "commission",               // "commission" | "rent" | "sale" | "subscription" | "other"
+- ✅ User Profile Page (`/profile`)
+- ✅ User can view their scheduled tours
+- ✅ Tour status tracking (pending, confirmed, cancelled, completed)
+- ✅ Property owner contact information for confirmed tours
+- ✅ Wishlist/Favorites functionality
+- ✅ User settings and preferences
+- ✅ Tour booking with user ID tracking
 
-  // Transaction Details
-  transactionId: "string",          // Transaction reference
-  paymentMethod: "bank_transfer",   // Payment method
-  paymentStatus: "completed",       // "pending" | "completed" | "failed" | "refunded"
+## Troubleshooting
 
-  // Dates
-  createdAt: "timestamp",           // Revenue record creation
-  receivedAt: "timestamp",          // Payment received date
-  dueDate: "timestamp",             // Payment due date
+If you encounter any errors:
 
-  // Additional Info
-  description: "string",            // Revenue description
-  category: "primary",              // "primary" | "secondary"
-  recurring: false,                 // Recurring revenue flag
+1. **Table already exists**: This is normal, the `IF NOT EXISTS` clause handles this
+2. **Policy already exists**: Drop the existing policy first, then create the new one
+3. **Column already exists**: This is normal, the `IF NOT EXISTS` clause handles this
+4. **Permission denied**: Make sure you're using the service role key or have proper permissions
 
-  // Tax Information
-  taxAmount: 0,                     // Tax amount
-  taxRate: 0,                       // Tax rate percentage
-  netAmount: 0,                     // Amount after tax
+## Testing
 
-  // Client Information
-  clientName: "string",             // Client name
-  clientEmail: "string",            // Client email
-  clientPhone: "string"             // Client phone
-}
-```
+After running the migrations, test the functionality by:
 
-### 5. Analytics Collection (`analytics`)
-
-**Document ID**: Date-based (YYYY-MM-DD)
-
-```javascript
-{
-  // Date Information
-  date: "string",                   // Date in YYYY-MM-DD format
-  userId: "string",                 // User ID
-
-  // Daily Metrics
-  views: {
-    total: 0,                       // Total views
-    unique: 0,                      // Unique views
-    properties: {}                  // Per-property views
-  },
-
-  // Lead Metrics
-  leads: {
-    total: 0,                       // Total leads
-    new: 0,                         // New leads
-    converted: 0,                   // Converted leads
-    sources: {}                     // Leads by source
-  },
-
-  // Revenue Metrics
-  revenue: {
-    total: 0,                       // Total revenue
-    transactions: 0,                // Number of transactions
-    average: 0                      // Average transaction value
-  },
-
-  // Property Metrics
-  properties: {
-    active: 0,                      // Active properties
-    sold: 0,                        // Properties sold
-    rented: 0,                      // Properties rented
-    new: 0                          // New properties added
-  },
-
-  // User Activity
-  activity: {
-    logins: 0,                      // Login count
-    timeSpent: 0,                   // Time spent in minutes
-    actions: {}                     // Actions performed
-  },
-
-  // Traffic Sources
-  traffic: {
-    direct: 0,                      // Direct traffic
-    search: 0,                      // Search engine traffic
-    social: 0,                      // Social media traffic
-    referral: 0                     // Referral traffic
-  }
-}
-```
-
-### 6. Notifications Collection (`notifications`)
-
-**Document ID**: Auto-generated
-
-```javascript
-{
-  // Basic Information
-  id: "string",                     // Auto-generated document ID
-  userId: "string",                 // Recipient user ID
-
-  // Notification Content
-  title: "string",                  // Notification title
-  message: "string",                // Notification message
-  type: "info",                     // "info" | "success" | "warning" | "error"
-
-  // Notification Category
-  category: "lead",                 // "lead" | "property" | "revenue" | "system" | "marketing"
-
-  // Status
-  read: false,                      // Read status
-  archived: false,                  // Archived status
-
-  // Related Data
-  relatedId: "string",              // Related document ID
-  relatedType: "lead",              // Related document type
-
-  // Action
-  actionUrl: "string",              // Action URL (optional)
-  actionText: "string",             // Action button text
-
-  // Timestamps
-  createdAt: "timestamp",           // Creation date
-  readAt: "timestamp",              // Read date
-  expiresAt: "timestamp"            // Expiry date
-}
-```
-
-## Firestore Security Rules
-
-```javascript
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-
-    // Users can only access their own data
-    match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // Properties belong to specific users
-    match /properties/{propertyId} {
-      allow read: if true; // Public read for property listings
-      allow write: if request.auth != null &&
-        (resource == null || request.auth.uid == resource.data.userId);
-    }
-
-    // Leads belong to property owners
-    match /leads/{leadId} {
-      allow read, write: if request.auth != null &&
-        request.auth.uid == resource.data.userId;
-    }
-
-    // Revenue records are private
-    match /revenue/{revenueId} {
-      allow read, write: if request.auth != null &&
-        request.auth.uid == resource.data.userId;
-    }
-
-    // Analytics are private
-    match /analytics/{analyticsId} {
-      allow read, write: if request.auth != null &&
-        request.auth.uid == resource.data.userId;
-    }
-
-    // Notifications are private
-    match /notifications/{notificationId} {
-      allow read, write: if request.auth != null &&
-        request.auth.uid == resource.data.userId;
-    }
-  }
-}
-```
-
-## Database Indexes
-
-### Composite Indexes Required
-
-```javascript
-// Properties Collection
-{
-  collection: "properties",
-  fields: [
-    { field: "userId", order: "ASCENDING" },
-    { field: "status", order: "ASCENDING" },
-    { field: "createdAt", order: "DESCENDING" }
-  ]
-}
-
-{
-  collection: "properties",
-  fields: [
-    { field: "city", order: "ASCENDING" },
-    { field: "type", order: "ASCENDING" },
-    { field: "price", order: "ASCENDING" }
-  ]
-}
-
-// Leads Collection
-{
-  collection: "leads",
-  fields: [
-    { field: "userId", order: "ASCENDING" },
-    { field: "status", order: "ASCENDING" },
-    { field: "createdAt", order: "DESCENDING" }
-  ]
-}
-
-// Revenue Collection
-{
-  collection: "revenue",
-  fields: [
-    { field: "userId", order: "ASCENDING" },
-    { field: "createdAt", order: "DESCENDING" }
-  ]
-}
-
-// Analytics Collection
-{
-  collection: "analytics",
-  fields: [
-    { field: "userId", order: "ASCENDING" },
-    { field: "date", order: "DESCENDING" }
-  ]
-}
-```
-
-## Data Migration Scripts
-
-### Initial User Setup
-
-```javascript
-// Function to create initial user profile
-export const initializeUserProfile = async (userId, userData) => {
-  const userRef = doc(db, "users", userId);
-  const initialProfile = {
-    ...userData,
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
-    stats: {
-      totalProperties: 0,
-      propertiesForSale: 0,
-      propertiesForRent: 0,
-      totalCustomers: 0,
-      totalCities: 0,
-      totalRevenue: 0,
-      monthlyRevenue: 0,
-      totalLeads: 0,
-      activeLeads: 0,
-      convertedLeads: 0,
-    },
-    preferences: {
-      theme: "light",
-      notifications: true,
-      emailUpdates: true,
-      language: "en",
-      timezone: "UTC",
-    },
-    status: "active",
-    subscription: {
-      plan: "free",
-      status: "active",
-      startDate: serverTimestamp(),
-      features: ["basic_listings", "lead_management"],
-    },
-  };
-
-  await setDoc(userRef, initialProfile);
-};
-```
-
-### Sample Data Seeding
-
-```javascript
-// Function to seed sample data for testing
-export const seedSampleData = async (userId) => {
-  // Add sample properties
-  const sampleProperties = [
-    {
-      title: "Modern 3BHK Apartment",
-      type: "sale",
-      category: "residential",
-      price: 5000000,
-      city: "Mumbai",
-      bedrooms: 3,
-      bathrooms: 2,
-      area: 1200,
-      status: "active",
-    },
-    // Add more sample data...
-  ];
-
-  for (const property of sampleProperties) {
-    await addProperty(userId, property);
-  }
-};
-```
-
-## Backup and Recovery
-
-### Automated Backups
-
-```javascript
-// Cloud Function for daily backups
-exports.scheduledFirestoreBackup = functions.pubsub
-  .schedule("0 2 * * *") // Daily at 2 AM
-  .onRun(async (context) => {
-    const client = new v1.FirestoreAdminClient();
-    const projectId = process.env.GCP_PROJECT || process.env.GCLOUD_PROJECT;
-    const databaseName = client.databasePath(projectId, "(default)");
-
-    return client.exportDocuments({
-      name: databaseName,
-      outputUriPrefix: `gs://${projectId}-firestore-backups`,
-      collectionIds: ["users", "properties", "leads", "revenue", "analytics"],
-    });
-  });
-```
-
-## Performance Optimization
-
-### Query Optimization Tips
-
-1. **Use Composite Indexes**: Create indexes for common query patterns
-2. **Limit Results**: Always use `.limit()` for large collections
-3. **Pagination**: Implement cursor-based pagination for better performance
-4. **Denormalization**: Store frequently accessed data together
-5. **Batch Operations**: Use batch writes for multiple operations
-
-### Caching Strategy
-
-```javascript
-// Implement caching for frequently accessed data
-const cache = new Map();
-
-export const getCachedUserStats = async (userId) => {
-  const cacheKey = `user_stats_${userId}`;
-
-  if (cache.has(cacheKey)) {
-    return cache.get(cacheKey);
-  }
-
-  const stats = await getDashboardStats(userId);
-  cache.set(cacheKey, stats);
-
-  // Cache for 5 minutes
-  setTimeout(() => cache.delete(cacheKey), 5 * 60 * 1000);
-
-  return stats;
-};
-```
-
-## Monitoring and Analytics
-
-### Performance Monitoring
-
-```javascript
-// Monitor query performance
-export const monitorQuery = (queryName, queryFunction) => {
-  return async (...args) => {
-    const startTime = Date.now();
-
-    try {
-      const result = await queryFunction(...args);
-      const duration = Date.now() - startTime;
-
-      console.log(`Query ${queryName} completed in ${duration}ms`);
-      return result;
-    } catch (error) {
-      console.error(`Query ${queryName} failed:`, error);
-      throw error;
-    }
-  };
-};
-```
-
-## Deployment Checklist
-
-- [ ] Set up Firebase project
-- [ ] Configure Firestore database
-- [ ] Deploy security rules
-- [ ] Create composite indexes
-- [ ] Set up backup schedule
-- [ ] Configure monitoring
-- [ ] Test all CRUD operations
-- [ ] Verify user isolation
-- [ ] Performance testing
-- [ ] Security audit
-
-## Maintenance
-
-### Regular Tasks
-
-1. **Weekly**: Review query performance metrics
-2. **Monthly**: Analyze storage usage and costs
-3. **Quarterly**: Security rules audit
-4. **Yearly**: Data retention policy review
-
-### Scaling Considerations
-
-- Monitor read/write operations
-- Implement data archiving for old records
-- Consider regional deployment for global users
-- Plan for collection group queries if needed
-
-This database setup provides a robust, scalable foundation for the EasyProp platform with proper user isolation, security, and performance optimization.
+1. Registering a new user
+2. Browsing properties and adding some to favorites
+3. Scheduling a tour on a property
+4. Visiting the user profile page (`/profile`)
+5. Checking that tours and favorites are displayed correctly

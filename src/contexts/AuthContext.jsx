@@ -11,6 +11,7 @@ import {
 import { auth } from '../firebase';
 import { sendOTPEmail } from '../services/emailService';
 import { createUserProfile, getUserProfile } from '../services/supabaseService';
+import supabase from '../services/supabaseClient';
 
 const AuthContext = createContext();
 
@@ -70,6 +71,7 @@ export const AuthProvider = ({ children }) => {
             userData.userType = profileResult.data.user_type || 'agent';
             userData.company = profileResult.data.company || '';
             userData.phone = profileResult.data.phone || userData.phone;
+            userData.photoURL = profileResult.data.photo_url || userData.photoURL;
             console.log('✅ User type set from Supabase:', userData.userType);
           } else {
             // Check if this is a newly registered user with temporary user type
@@ -81,17 +83,27 @@ export const AuthProvider = ({ children }) => {
               // Clear the temporary user type
               localStorage.removeItem('temp_user_type');
             } else {
-              // For existing users without profiles, don't create a default profile here
-              // This should only happen for legacy users, not newly registered users
-              console.log('⚠️ User profile not found for existing user, using default agent type');
-              userData.userType = 'agent';
-              userData.company = '';
+              // For existing users without profiles, ensure profile exists
+              console.log('⚠️ User profile not found, ensuring profile exists');
+              const ensureResult = await ensureUserProfile(firebaseUser);
+              
+              if (ensureResult.success) {
+                console.log('✅ User profile ensured');
+                userData.userType = ensureResult.data?.user_type || 'agent';
+                userData.company = ensureResult.data?.company || '';
+                userData.phone = ensureResult.data?.phone || userData.phone;
+              } else {
+                console.log('⚠️ Failed to ensure user profile, using default agent type');
+                userData.userType = 'agent';
+                userData.company = '';
+              }
             }
           }
         } catch (error) {
           console.error('❌ Error checking user profile:', error);
           // Set default userType if there's an error
           userData.userType = 'agent';
+          userData.company = '';
         }
         
         console.log('👤 Final user data:', userData);
@@ -464,8 +476,22 @@ export const AuthProvider = ({ children }) => {
           ...prevUser,
           userType: profileResult.data.user_type,
           company: profileResult.data.company,
-          phone: profileResult.data.phone
+          phone: profileResult.data.phone,
+          photoURL: profileResult.data.photo_url
         }));
+      } else {
+        // Profile doesn't exist, ensure it exists
+        console.log('🔄 Ensuring user profile exists during refresh');
+        const ensureResult = await ensureUserProfile(user);
+        if (ensureResult.success) {
+          setUser(prevUser => ({
+            ...prevUser,
+            userType: ensureResult.data?.user_type || 'agent',
+            company: ensureResult.data?.company || '',
+            phone: ensureResult.data?.phone || prevUser.phone,
+            photoURL: ensureResult.data?.photo_url || prevUser.photoURL
+          }));
+        }
       }
     } catch (error) {
       console.error('Error refreshing user data:', error);
@@ -494,6 +520,77 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Function to ensure user profile exists
+  const ensureUserProfile = async (firebaseUser) => {
+    try {
+      const profileResult = await getUserProfile(firebaseUser.uid);
+      
+      if (profileResult.success && profileResult.data) {
+        return { success: true, data: profileResult.data };
+      }
+      
+      // Profile doesn't exist, create one
+      console.log('🔄 Creating user profile for:', firebaseUser.uid);
+      const createResult = await createUserProfile(firebaseUser.uid, {
+        email: firebaseUser.email,
+        name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
+        user_type: 'agent',
+        company: '',
+        phone: firebaseUser.phoneNumber || null
+      });
+      
+      if (createResult.success) {
+        console.log('✅ User profile created successfully');
+        return createResult;
+      } else {
+        // If creation failed due to duplicate email, try to find existing user by email
+        if (createResult.error && createResult.error.includes('duplicate key value violates unique constraint')) {
+          console.log('🔍 User profile creation failed due to duplicate email, searching by email...');
+          
+          // Try to find user by email instead of ID
+          const { data: existingUser, error: searchError } = await supabase
+            .from('users')
+            .select('*')
+            .eq('email', firebaseUser.email)
+            .maybeSingle();
+          
+          if (!searchError && existingUser) {
+            console.log('✅ Found existing user profile by email:', existingUser.id);
+            // Update the existing user's ID to match Firebase UID if different
+            if (existingUser.id !== firebaseUser.uid) {
+              console.log('🔄 Updating user ID to match Firebase UID');
+              const { data: updatedUser, error: updateError } = await supabase
+                .from('users')
+                .update({ id: firebaseUser.uid })
+                .eq('email', firebaseUser.email)
+                .select()
+                .single();
+              
+              if (!updateError && updatedUser) {
+                return { success: true, data: updatedUser };
+              }
+            }
+            return { success: true, data: existingUser };
+          }
+        }
+        
+        console.error('❌ Failed to create user profile:', createResult.error);
+        return { success: false, error: createResult.error };
+      }
+    } catch (error) {
+      console.error('❌ Error ensuring user profile:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
+  // Function to update user data in the context
+  const updateUser = (data) => {
+    setUser(prevUser => ({
+      ...prevUser,
+      ...data
+    }));
+  };
+
   const value = {
     user,
     login,
@@ -505,6 +602,8 @@ export const AuthProvider = ({ children }) => {
     signInWithGoogle,
     logout,
     refreshUserData,
+    ensureUserProfile,
+    updateUser,
     loading: loading || initializing,
     isAuthenticated: !!user,
     checkFirebaseConnection

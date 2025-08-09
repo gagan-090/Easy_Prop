@@ -12,7 +12,14 @@ import {
   Moon,
   Map,
   RotateCcw,
+  Loader2,
 } from "lucide-react";
+import { 
+  getSearchFiltersData,
+  searchPropertiesWithSuggestions,
+  getUniqueCities,
+  getUniqueLocalities 
+} from "../services/supabaseService";
 
 const ModernSearchFilter = ({
   onSearch,
@@ -26,48 +33,88 @@ const ModernSearchFilter = ({
   const [locationSuggestions, setLocationSuggestions] = useState([]);
   const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
   const [useCurrentLocation, setUseCurrentLocation] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [searchSuggestions, setSearchSuggestions] = useState([]);
+  const [showSearchSuggestions, setShowSearchSuggestions] = useState(false);
+  
+  // Dynamic filter options from backend
+  const [filterOptions, setFilterOptions] = useState({
+    cities: [],
+    localities: [],
+    propertyTypes: [],
+    furnishingTypes: [],
+    facingOptions: [],
+    amenities: [],
+    priceRanges: { sale: {}, rent: {} }
+  });
+  
   const [filters, setFilters] = useState(() => ({
+    listingType: "sale",
     propertyType: "",
     priceRange: { min: "", max: "" },
     bedrooms: "",
     bathrooms: "",
-    location: "",
+    city: "",
+    locality: "",
     amenities: [],
     possessionStatus: "",
     furnishing: "",
     areaRange: { min: 500, max: 5000 },
-    builderName: "",
     propertyAge: "",
     facing: "",
-    floorNumber: "",
     gatedSociety: false,
-    smartTags: [],
     ...initialFilters,
   }));
+  
   const dropdownRef = useRef(null);
+  const debounceRef = useRef(null);
 
 
-  // Memoized static data for better performance
-  const propertyTypes = useMemo(() => [
-    { value: "apartment", label: "Apartment", icon: "🏢" },
-    { value: "house", label: "House", icon: "🏠" },
-    { value: "villa", label: "Villa", icon: "🏡" },
-    { value: "condo", label: "Condo", icon: "�️" },
-    { value: "townhouse", label: "Townhouse", icon: "🏘️" },
-    { value: "studio", label: "Studio", icon: "�}" },
-    { value: "penthouse", label: "Penthouse", icon: "🏢" },
-    { value: "plot", label: "Plot/Land", icon: "🌍" },
-  ], []);
+  // Load filter options from backend
+  useEffect(() => {
+    const loadFilterOptions = async () => {
+      setLoading(true);
+      try {
+        const result = await getSearchFiltersData();
+        if (result.success) {
+          setFilterOptions(result.data);
+        }
+      } catch (error) {
+        console.error("Error loading filter options:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadFilterOptions();
+  }, []);
+
+  // Dynamic property types from backend
+  const propertyTypes = useMemo(() => {
+    return filterOptions.propertyTypes.map(type => ({
+      value: type,
+      label: type.charAt(0).toUpperCase() + type.slice(1),
+      icon: type === 'apartment' ? '🏢' : 
+            type === 'house' ? '🏠' : 
+            type === 'villa' ? '🏡' : 
+            type === 'office' ? '🏢' : 
+            type === 'shop' ? '🏪' : 
+            type === 'land' ? '🌍' : '🏠'
+    }));
+  }, [filterOptions.propertyTypes]);
 
   const bedroomOptions = useMemo(() => [
     { value: "1", label: "1 BHK" },
     { value: "2", label: "2 BHK" },
     { value: "3", label: "3 BHK" },
     { value: "4", label: "4 BHK" },
-    { value: "5+", label: "5+ BHK" },
+    { value: "4+", label: "4+ BHK" },
   ], []);
 
-
+  const listingTypes = useMemo(() => [
+    { value: "sale", label: "For Sale" },
+    { value: "rent", label: "For Rent" },
+  ], []);
 
   const possessionOptions = useMemo(() => [
     { value: "ready", label: "Ready to Move" },
@@ -77,7 +124,7 @@ const ModernSearchFilter = ({
   const furnishingOptions = useMemo(() => [
     { value: "unfurnished", label: "Unfurnished" },
     { value: "semi-furnished", label: "Semi-Furnished" },
-    { value: "fully-furnished", label: "Fully Furnished" },
+    { value: "furnished", label: "Fully Furnished" },
   ], []);
 
   const propertyAgeOptions = useMemo(() => [
@@ -87,64 +134,56 @@ const ModernSearchFilter = ({
     { value: "10+", label: "10+ Years" },
   ], []);
 
+  // Dynamic popular locations from backend
+  const popularLocations = useMemo(() => {
+    return filterOptions.cities.slice(0, 8);
+  }, [filterOptions.cities]);
 
+  const quickSearchOptions = useMemo(() => {
+    const topCity = filterOptions.cities[0] || "Mumbai";
+    const topPropertyType = filterOptions.propertyTypes[0] || "apartment";
+    
+    return [
+      {
+        label: `${topCity}`,
+        type: "city",
+        value: topCity,
+        icon: MapPin,
+        color: "text-red-600",
+        bgColor: "bg-red-50 hover:bg-red-100",
+      },
+      {
+        label: "Apartments",
+        type: "propertyType",
+        value: "apartment",
+        icon: Building,
+        color: "text-blue-600",
+        bgColor: "bg-blue-50 hover:bg-blue-100",
+      },
+      {
+        label: "For Sale",
+        type: "listingType",
+        value: "sale",
+        icon: IndianRupee,
+        color: "text-green-600",
+        bgColor: "bg-green-50 hover:bg-green-100",
+      },
+      {
+        label: "3 BHK",
+        type: "bedrooms",
+        value: "3",
+        icon: Home,
+        color: "text-purple-600",
+        bgColor: "bg-purple-50 hover:bg-purple-100",
+      },
+    ];
+  }, [filterOptions.cities, filterOptions.propertyTypes]);
 
-  const amenitiesList = useMemo(() => [
-    { category: "Basic", items: ["Lift", "Parking", "Security", "Power Backup"] },
-    { category: "Recreation", items: ["Gym", "Swimming Pool", "Garden", "Club House"] },
-    { category: "Convenience", items: ["Shopping Center", "School", "Hospital", "ATM"] },
-  ], []);
-
-  const popularLocations = useMemo(() => [
-    "Mumbai", "Delhi", "Bangalore", "Chennai", "Hyderabad", "Pune", "Kolkata", "Ahmedabad",
-    "Gurgaon", "Noida", "Thane", "Navi Mumbai", "Faridabad", "Ghaziabad"
-  ], []);
-
-  const quickSearchOptions = useMemo(() => [
-    {
-      label: "Mumbai, MH",
-      type: "location",
-      value: "Mumbai",
-      icon: MapPin,
-      color: "text-red-600",
-      bgColor: "bg-red-50 hover:bg-red-100",
-    },
-    {
-      label: "Apartments",
-      type: "propertyType",
-      value: "apartment",
-      icon: Building,
-      color: "text-blue-600",
-      bgColor: "bg-blue-50 hover:bg-blue-100",
-    },
-    {
-      label: "₹20L-₹1.3Cr",
-      type: "priceRange",
-      value: { min: "2000000", max: "13000000" },
-      icon: IndianRupee,
-      color: "text-green-600",
-      bgColor: "bg-green-50 hover:bg-green-100",
-    },
-    {
-      label: "3-5 BHK",
-      type: "bedrooms",
-      value: "3-5",
-      icon: Home,
-      color: "text-purple-600",
-      bgColor: "bg-purple-50 hover:bg-purple-100",
-    },
-  ], []);
-
-  const popularTypes = useMemo(() => ["Apartment", "Villa", "House", "Studio", "Penthouse"], []);
-
-  const mockLocationSuggestions = useMemo(() => [
-    "Mumbai, Maharashtra",
-    "Mumbai Central, Mumbai",
-    "Mumbai Suburban, Mumbai", 
-    "Andheri West, Mumbai",
-    "Bandra West, Mumbai",
-    "Powai, Mumbai",
-  ], []);
+  const popularTypes = useMemo(() => {
+    return filterOptions.propertyTypes.slice(0, 5).map(type => 
+      type.charAt(0).toUpperCase() + type.slice(1)
+    );
+  }, [filterOptions.propertyTypes]);
 
   // Optimized callback functions
   const handleClose = useCallback(() => {
@@ -191,19 +230,43 @@ const ModernSearchFilter = ({
     });
   }, [onFilterChange]);
 
+  // Search with debouncing for suggestions
+  const debouncedSearch = useCallback((query) => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+    
+    debounceRef.current = setTimeout(async () => {
+      if (query && query.length >= 2) {
+        try {
+          const result = await searchPropertiesWithSuggestions(query, 5);
+          if (result.success) {
+            setSearchSuggestions(result.data);
+            setShowSearchSuggestions(true);
+          }
+        } catch (error) {
+          console.error("Error getting search suggestions:", error);
+        }
+      } else {
+        setSearchSuggestions([]);
+        setShowSearchSuggestions(false);
+      }
+    }, 300);
+  }, []);
+
   // Optimized location input handler
-  const handleLocationInput = useCallback((value) => {
-    handleFilterChange("location", value);
-    if (value.length > 2) {
-      const filtered = mockLocationSuggestions.filter(location =>
-        location.toLowerCase().includes(value.toLowerCase())
+  const handleLocationInput = useCallback(async (value) => {
+    handleFilterChange("city", value);
+    if (value.length > 1) {
+      const filtered = filterOptions.cities.filter(city =>
+        city.toLowerCase().includes(value.toLowerCase())
       );
       setLocationSuggestions(filtered);
       setShowLocationSuggestions(true);
     } else {
       setShowLocationSuggestions(false);
     }
-  }, [handleFilterChange, mockLocationSuggestions]);
+  }, [handleFilterChange, filterOptions.cities]);
 
   // Optimized geolocation handler
   const getCurrentLocation = useCallback(() => {
@@ -212,7 +275,9 @@ const ModernSearchFilter = ({
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const { latitude, longitude } = position.coords;
-          handleFilterChange("location", `Current Location (${latitude.toFixed(2)}, ${longitude.toFixed(2)})`);
+          // For now, just set to a nearby city - in production you'd reverse geocode
+          const nearbyCity = filterOptions.cities[0] || "Mumbai";
+          handleFilterChange("city", nearbyCity);
           setUseCurrentLocation(false);
         },
         (error) => {
@@ -225,7 +290,7 @@ const ModernSearchFilter = ({
       setUseCurrentLocation(false);
       alert("Geolocation is not supported by this browser.");
     }
-  }, [handleFilterChange]);
+  }, [handleFilterChange, filterOptions.cities]);
 
   // Optimized price change handler
   const handlePriceChange = useCallback((type, value) => {
@@ -251,12 +316,35 @@ const ModernSearchFilter = ({
     });
   }, [onFilterChange]);
 
-  // Optimized search handler
+  // Optimized search handler - redirect to properties page
   const handleSearch = useCallback((e) => {
     e.preventDefault();
-    onSearch?.(searchQuery, filters);
+    
+    // Build URL parameters for properties page
+    const params = new URLSearchParams();
+    
+    if (searchQuery) params.set("search", searchQuery);
+    
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value && value !== "" && !(Array.isArray(value) && value.length === 0)) {
+        if (typeof value === "object" && !Array.isArray(value)) {
+          // Handle price range object
+          if (value.min || value.max) {
+            const rangeStr = `${value.min || 0}-${value.max || ''}`;
+            params.set(key, rangeStr);
+          }
+        } else if (Array.isArray(value)) {
+          params.set(key, value.join(","));
+        } else {
+          params.set(key, value);
+        }
+      }
+    });
+    
+    // Redirect to properties page instead of search page
+    window.location.href = `/properties?${params.toString()}`;
     setIsOpen(false);
-  }, [searchQuery, filters, onSearch]);
+  }, [searchQuery, filters]);
 
   // Optimized quick search handler
   const handleQuickSearch = useCallback((option) => {
@@ -264,73 +352,74 @@ const ModernSearchFilter = ({
       let newFilters = { ...prev };
       
       switch (option.type) {
-        case "location":
-          newFilters.location = option.value;
+        case "city":
+          newFilters.city = option.value;
           break;
         case "propertyType":
           newFilters.propertyType = option.value;
           break;
-        case "priceRange":
-          newFilters.priceRange = option.value;
+        case "listingType":
+          newFilters.listingType = option.value;
           break;
         case "bedrooms":
           newFilters.bedrooms = option.value;
           break;
       }
 
-      onFilterChange?.(newFilters);
-      onSearch?.(searchQuery, newFilters);
+      // Build URL and redirect
+      const params = new URLSearchParams();
+      Object.entries(newFilters).forEach(([key, value]) => {
+        if (value && value !== "" && !(Array.isArray(value) && value.length === 0)) {
+          if (Array.isArray(value)) {
+            params.set(key, value.join(","));
+          } else {
+            params.set(key, value);
+          }
+        }
+      });
+      
+      window.location.href = `/properties?${params.toString()}`;
       return newFilters;
     });
-  }, [searchQuery, onFilterChange, onSearch]);
+  }, []);
 
   // Handle location click from popular locations
   const handleLocationClick = useCallback((location) => {
-    handleFilterChange("location", location);
-    onSearch?.(searchQuery, { ...filters, location });
-  }, [handleFilterChange, onSearch, searchQuery, filters]);
+    const params = new URLSearchParams();
+    params.set("city", location);
+    window.location.href = `/properties?${params.toString()}`;
+  }, []);
 
   // Handle property type click from popular types
   const handlePropertyTypeClick = useCallback((type) => {
     const typeValue = type.toLowerCase();
-    handleFilterChange("propertyType", typeValue);
-    onSearch?.(searchQuery, { ...filters, propertyType: typeValue });
-  }, [handleFilterChange, onSearch, searchQuery, filters]);
-
-  // Handle smart tag toggle
-  const handleSmartTagToggle = useCallback((tag) => {
-    setFilters(prev => {
-      const newSmartTags = prev.smartTags?.includes(tag)
-        ? prev.smartTags.filter((t) => t !== tag)
-        : [...(prev.smartTags || []), tag];
-      const newFilters = { ...prev, smartTags: newSmartTags };
-      onFilterChange?.(newFilters);
-      return newFilters;
-    });
-  }, [onFilterChange]);
+    const params = new URLSearchParams();
+    params.set("propertyType", typeValue);
+    window.location.href = `/properties?${params.toString()}`;
+  }, []);
 
   // Optimized clear filters function
   const clearFilters = useCallback(() => {
     const clearedFilters = {
+      listingType: "sale",
       propertyType: "",
       priceRange: { min: "", max: "" },
       bedrooms: "",
       bathrooms: "",
-      location: "",
+      city: "",
+      locality: "",
       amenities: [],
       possessionStatus: "",
       furnishing: "",
       areaRange: { min: 500, max: 5000 },
-      builderName: "",
       propertyAge: "",
       facing: "",
-      floorNumber: "",
       gatedSociety: false,
-      smartTags: [],
     };
     setFilters(clearedFilters);
     setSearchQuery("");
     setShowLocationSuggestions(false);
+    setShowSearchSuggestions(false);
     onFilterChange?.(clearedFilters);
   }, [onFilterChange]);
 
@@ -430,10 +519,16 @@ const ModernSearchFilter = ({
               type="text"
               placeholder="Search properties, locations, or keywords..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                debouncedSearch(e.target.value);
+              }}
               className={`flex-1 border-none outline-none text-lg font-medium bg-transparent ${darkMode ? 'text-white placeholder-gray-400' : 'text-gray-900 placeholder-gray-500'}`}
               aria-label="Search properties"
             />
+            {loading && (
+              <Loader2 className="h-5 w-5 text-gray-400 animate-spin mr-2" />
+            )}
           </div>
 
           {/* Dark Mode Toggle */}
@@ -514,8 +609,27 @@ const ModernSearchFilter = ({
               </div>
               
               {/* Simplified Filter Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-6">
                 
+                {/* Listing Type */}
+                <div>
+                  <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                    <IndianRupee className="inline h-4 w-4 mr-1" />
+                    Listing Type
+                  </label>
+                  <select
+                    value={filters.listingType}
+                    onChange={(e) => handleFilterChange("listingType", e.target.value)}
+                    className={`w-full px-3 py-2 border rounded-lg ${themeClasses.input}`}
+                  >
+                    {listingTypes.map((type) => (
+                      <option key={type.value} value={type.value}>
+                        {type.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
                 {/* Property Type */}
                 <div>
                   <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
@@ -536,16 +650,16 @@ const ModernSearchFilter = ({
                   </select>
                 </div>
 
-                {/* Location */}
+                {/* City */}
                 <div className="relative">
                   <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
                     <MapPin className="inline h-4 w-4 mr-1" />
-                    Location
+                    City
                   </label>
                   <input
                     type="text"
-                    placeholder="Enter city or area"
-                    value={filters.location}
+                    placeholder="Enter city"
+                    value={filters.city}
                     onChange={(e) => handleLocationInput(e.target.value)}
                     className={`w-full px-3 py-2 pr-10 border rounded-lg ${themeClasses.input}`}
                   />
@@ -569,7 +683,7 @@ const ModernSearchFilter = ({
                         <button
                           key={index}
                           onClick={() => {
-                            handleFilterChange("location", suggestion);
+                            handleFilterChange("city", suggestion);
                             setShowLocationSuggestions(false);
                           }}
                           className={`w-full text-left px-3 py-2 hover:bg-blue-50 ${darkMode ? 'hover:bg-gray-700' : ''} transition-colors text-sm`}
@@ -628,22 +742,22 @@ const ModernSearchFilter = ({
               </div>
 
               {/* Additional Filters */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
                 
-                {/* Possession Status */}
+                {/* Locality */}
                 <div>
                   <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
-                    Possession Status
+                    Locality
                   </label>
                   <select
-                    value={filters.possessionStatus}
-                    onChange={(e) => handleFilterChange("possessionStatus", e.target.value)}
+                    value={filters.locality}
+                    onChange={(e) => handleFilterChange("locality", e.target.value)}
                     className={`w-full px-3 py-2 border rounded-lg ${themeClasses.input}`}
                   >
-                    <option value="">Any Status</option>
-                    {possessionOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
+                    <option value="">Any Locality</option>
+                    {filterOptions.localities.map((locality) => (
+                      <option key={locality} value={locality}>
+                        {locality}
                       </option>
                     ))}
                   </select>
@@ -686,29 +800,50 @@ const ModernSearchFilter = ({
                     ))}
                   </select>
                 </div>
+
+                {/* Facing */}
+                <div>
+                  <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                    Facing
+                  </label>
+                  <select
+                    value={filters.facing}
+                    onChange={(e) => handleFilterChange("facing", e.target.value)}
+                    className={`w-full px-3 py-2 border rounded-lg ${themeClasses.input}`}
+                  >
+                    <option value="">Any Facing</option>
+                    {filterOptions.facingOptions.map((facing) => (
+                      <option key={facing} value={facing}>
+                        {facing.charAt(0).toUpperCase() + facing.slice(1)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               {/* Amenities */}
-              <div className="mb-6">
-                <label className={`block text-sm font-medium mb-3 ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
-                  Amenities
-                </label>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                  {amenitiesList.flatMap(category => category.items).map((amenity) => (
-                    <label key={amenity} className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={filters.amenities.includes(amenity)}
-                        onChange={() => handleAmenityToggle(amenity)}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      <span className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                        {amenity}
-                      </span>
-                    </label>
-                  ))}
+              {filterOptions.amenities.length > 0 && (
+                <div className="mb-6">
+                  <label className={`block text-sm font-medium mb-3 ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                    Amenities
+                  </label>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {filterOptions.amenities.slice(0, 12).map((amenity) => (
+                      <label key={amenity} className="flex items-center space-x-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={filters.amenities.includes(amenity)}
+                          onChange={() => handleAmenityToggle(amenity)}
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                          {amenity}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Apply Button */}
               <div className="flex justify-end space-x-3 pt-4 border-t">

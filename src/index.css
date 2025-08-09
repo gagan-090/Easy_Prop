@@ -743,7 +743,7 @@ html {
 }
 
 .property-image-enhanced {
-  @apply w-full h-64 object-cover transition-all duration-700;
+  @apply w-full h-48 object-cover transition-all duration-700;
   position: relative;
   overflow: hidden;
 }
@@ -1041,7 +1041,7 @@ a {
   }
   
   .property-image-enhanced {
-    height: 200px;
+    height: 160px;
   }
   
   .fab {

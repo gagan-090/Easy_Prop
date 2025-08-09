@@ -1,28 +1,107 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import {
-  MapPin, Bed, Bath, Square, Heart, Share2, Calendar, 
-  Eye, Star, Phone, Mail, User, ChevronLeft, ChevronRight,
-  Car, Wifi, Dumbbell, Waves, Shield, TreePine, Building,
-  Camera, Video, ArrowLeft, Send, MessageSquare, CheckCircle,
-  Play, Download, Bookmark, TrendingUp, Award, Clock,
-  Home, Zap, Coffee, Utensils, Tv, Wind, Sun, Moon,
-  Calculator, Navigation, Maximize2, X, Info,
-  ThumbsUp, MessageCircle, Share, ExternalLink, Globe,
-  Smartphone, Tablet, Monitor, Headphones, Volume2,
-  Sparkles, Target, Compass, Layers, Palette, Lightbulb,
-  Image, Settings, Search, Filter, SortAsc, AlertCircle,
-  FileText, CreditCard, Users, BarChart3, PieChart,
-  Briefcase, GraduationCap, ShoppingBag, Hospital, Train,
-  Bus, ShoppingCart, Gamepad2, Music, Film, Book,
-  DollarSign, Percent, Activity, LineChart,
-  Archive, Lock, Unlock, Key
-} from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
-import { 
-  getPropertyById, 
-  addPropertyView, 
-  addLead, 
+  MapPin,
+  Bed,
+  Bath,
+  Square,
+  Heart,
+  Share2,
+  Calendar,
+  Eye,
+  Star,
+  Phone,
+  Mail,
+  User,
+  ChevronLeft,
+  ChevronRight,
+  Car,
+  Wifi,
+  Dumbbell,
+  Waves,
+  Shield,
+  TreePine,
+  Building,
+  Camera,
+  Video,
+  ArrowLeft,
+  Send,
+  MessageSquare,
+  CheckCircle,
+  Play,
+  Download,
+  Bookmark,
+  TrendingUp,
+  Award,
+  Clock,
+  Home,
+  Zap,
+  Coffee,
+  Utensils,
+  Tv,
+  Wind,
+  Sun,
+  Moon,
+  Calculator,
+  Navigation,
+  Maximize2,
+  X,
+  Info,
+  ThumbsUp,
+  MessageCircle,
+  Share,
+  ExternalLink,
+  Globe,
+  Smartphone,
+  Tablet,
+  Monitor,
+  Headphones,
+  Volume2,
+  Sparkles,
+  Target,
+  Compass,
+  Layers,
+  Palette,
+  Lightbulb,
+  Image,
+  Settings,
+  Search,
+  Filter,
+  SortAsc,
+  AlertCircle,
+  FileText,
+  CreditCard,
+  Users,
+  BarChart3,
+  PieChart,
+  Briefcase,
+  GraduationCap,
+  ShoppingBag,
+  Hospital,
+  Train,
+  Bus,
+  ShoppingCart,
+  Gamepad2,
+  Music,
+  Film,
+  Book,
+  DollarSign,
+  Percent,
+  Activity,
+  LineChart,
+  Archive,
+  Lock,
+  Unlock,
+  Key,
+  Pause,
+  RotateCcw,
+  XCircle,
+} from "lucide-react";
+import { useAuth } from "../contexts/AuthContext";
+import {
+  getPropertyById,
+  addPropertyView,
+  addLead,
   getUserFavorites,
   addToFavorites,
   removeFromFavorites,
@@ -31,131 +110,130 @@ import {
   getPropertyViews,
   getPropertyAnalytics,
   getUserProfile,
-  scheduleTour
-} from '../services/supabaseService';
-import Loading from '../components/Loading';
+  scheduleTour,
+} from "../services/supabaseService";
+import supabase from "../services/supabaseClient";
+import Loading from "../components/Loading";
 
 const PropertyDetails = () => {
   const { id } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
-  
-  // Core property state
+
+  // Core state
   const [property, setProperty] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [propertyOwner, setPropertyOwner] = useState(null);
-  
+
   // UI state
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isImageGalleryOpen, setIsImageGalleryOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState("overview");
   const [isScrolled, setIsScrolled] = useState(false);
   const [showFullDescription, setShowFullDescription] = useState(false);
-  
+
   // Interactive features
   const [isFavorite, setIsFavorite] = useState(false);
-  const [isBookmarked, setIsBookmarked] = useState(false);
   const [viewCount, setViewCount] = useState(0);
   const [propertyViews, setPropertyViews] = useState([]);
   const [viewGrowth, setViewGrowth] = useState(0);
-  
-  // Modals and overlays
+
+  // Modals
   const [showContactModal, setShowContactModal] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [showMortgageCalculator, setShowMortgageCalculator] = useState(false);
-  const [showVirtualTour, setShowVirtualTour] = useState(false);
-  const [showFloorPlan, setShowFloorPlan] = useState(false);
-  const [showDocuments, setShowDocuments] = useState(false);
-  const [showPriceComparison, setShowPriceComparison] = useState(false);
-  const [showNearbyMap, setShowNearbyMap] = useState(false);
-  
+
   // Contact form
   const [messageForm, setMessageForm] = useState({
-    name: user?.displayName || '',
-    email: user?.email || '',
-    phone: '',
-    message: 'I am interested in this property. Please contact me with more details.'
+    name: user?.displayName || "",
+    email: user?.email || "",
+    phone: "",
+    message:
+      "I am interested in this property. Please contact me with more details.",
   });
   const [sendingMessage, setSendingMessage] = useState(false);
   const [messageSent, setMessageSent] = useState(false);
-  
-  // Schedule visit form
+
+  // Schedule form
   const [scheduleForm, setScheduleForm] = useState({
-    date: '',
-    time: '',
-    visitType: 'physical', // physical, virtual
-    message: ''
+    date: "",
+    time: "",
+    visitType: "physical",
+    message: "",
   });
   const [schedulingVisit, setSchedulingVisit] = useState(false);
   const [visitScheduled, setVisitScheduled] = useState(false);
-  
+
   // Dynamic content
   const [nearbyProperties, setNearbyProperties] = useState([]);
   const [similarProperties, setSimilarProperties] = useState([]);
   const [loadingNearby, setLoadingNearby] = useState(false);
-  const [propertyAnalytics, setPropertyAnalytics] = useState(null);
-  const [marketTrends, setMarketTrends] = useState({
-    priceGrowth: 12.5,
-    demandLevel: "high",
-    averagePrice: 0,
-    totalListings: 0,
-    pricePerSqft: 0,
-    appreciation: 8.2
-  });
-  
+
   // Mortgage calculator
   const [mortgageData, setMortgageData] = useState({
     loanAmount: 0,
     interestRate: 8.5,
     loanTerm: 20,
     downPayment: 0,
-    monthlyIncome: 0
+    monthlyIncome: 0,
   });
   const [mortgageResult, setMortgageResult] = useState(null);
-  const [eligibilityResult, setEligibilityResult] = useState(null);
-  
-  // Enhanced UI state
+
+  // Animation state
+  const [animationTrigger, setAnimationTrigger] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isHovering, setIsHovering] = useState(false);
-  const [animationTrigger, setAnimationTrigger] = useState(false);
-  const [propertyScore, setPropertyScore] = useState(8.5);
-  const [priceHistory, setPriceHistory] = useState([]);
-  const [nearbyPlaces, setNearbyPlaces] = useState({
-    schools: [],
-    hospitals: [],
-    markets: [],
-    transport: [],
-    entertainment: []
-  });
-  
-  // Reviews and testimonials
-  const [reviews, setReviews] = useState([]);
-  const [averageRating, setAverageRating] = useState(4.5);
-  const [showReviewModal, setShowReviewModal] = useState(false);
-  
-  // Documents and legal
-  const [availableDocuments, setAvailableDocuments] = useState([]);
-  const [documentAccess, setDocumentAccess] = useState(false);
-  
-  // Social sharing
-  const [shareUrl, setShareUrl] = useState('');
-  const [shareData, setShareData] = useState({});
-  
-  // Virtual tour state
-  const [currentRoom, setCurrentRoom] = useState(0);
-  const virtualTourRooms = [
-    { id: 0, name: 'Living Room' },
-    { id: 1, name: 'Kitchen' },
-    { id: 2, name: 'Master Bedroom' },
-    { id: 3, name: 'Bathroom' }
-  ];
-  
+
   // Refs for animations
   const galleryRef = useRef(null);
   const parallaxRef = useRef(null);
-  const mapRef = useRef(null);
-  const metricsRef = useRef(null);
+
+  // Additional detailed state
+  const [propertyAnalytics, setPropertyAnalytics] = useState(null);
+  const [floorPlans, setFloorPlans] = useState([]);
+  const [virtualTour, setVirtualTour] = useState(null);
+  const [propertyDocuments, setPropertyDocuments] = useState([]);
+  const [priceHistory, setPriceHistory] = useState([]);
+  const [marketTrends, setMarketTrends] = useState(null);
+  const [neighborhoodInfo, setNeighborhoodInfo] = useState(null);
+  const [transportLinks, setTransportLinks] = useState([]);
+  const [nearbyFacilities, setNearbyFacilities] = useState([]);
+  const [propertyReviews, setPropertyReviews] = useState([]);
+  const [legalInfo, setLegalInfo] = useState(null);
+  const [financingOptions, setFinancingOptions] = useState([]);
+  const [propertyComparisons, setPropertyComparisons] = useState([]);
+  const [maintenanceHistory, setMaintenanceHistory] = useState([]);
+  const [energyRating, setEnergyRating] = useState(null);
+  const [safetyFeatures, setSafetyFeatures] = useState([]);
+  const [communityFeatures, setCommunityFeatures] = useState([]);
+  const [investmentPotential, setInvestmentPotential] = useState(null);
+
+  // Enhanced similar properties state
+  const [priceRangeProperties, setPriceRangeProperties] = useState([]);
+  const [locationBasedProperties, setLocationBasedProperties] = useState([]);
+  const [recentlyViewed, setRecentlyViewed] = useState([]);
+  const [recommendedProperties, setRecommendedProperties] = useState([]);
+
+  // Additional specific category states
+  const [sameAreaProperties, setSameAreaProperties] = useState([]);
+  const [sameBHKProperties, setSameBHKProperties] = useState([]);
+  const [sameLocalityProperties, setSameLocalityProperties] = useState([]);
+  const [similarSizeProperties, setSimilarSizeProperties] = useState([]);
+  const [sameBuilderProperties, setSameBuilderProperties] = useState([]);
+  const [nearbyMetroProperties, setNearbyMetroProperties] = useState([]);
+
+  // Map and location state
+  const [mapCenter, setMapCenter] = useState({ lat: 0, lng: 0 });
+  const [mapZoom, setMapZoom] = useState(15);
+  const [nearbyPlaces, setNearbyPlaces] = useState([]);
+
+  // Dynamic content state
+  const [weatherInfo, setWeatherInfo] = useState(null);
+  const [areaStatistics, setAreaStatistics] = useState(null);
+  const [demographicData, setDemographicData] = useState(null);
+  const [futureProjects, setFutureProjects] = useState([]);
+  const [governmentSchemes, setGovernmentSchemes] = useState([]);
 
   // Enhanced animations and interactions
   useEffect(() => {
@@ -167,15 +245,15 @@ const PropertyDetails = () => {
       setMousePosition({ x: e.clientX, y: e.clientY });
     };
 
-    window.addEventListener('scroll', handleScroll);
-    window.addEventListener('mousemove', handleMouseMove);
-    
+    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("mousemove", handleMouseMove);
+
     // Trigger entrance animations
     setTimeout(() => setAnimationTrigger(true), 100);
 
     return () => {
-      window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("mousemove", handleMouseMove);
     };
   }, []);
 
@@ -183,185 +261,386 @@ const PropertyDetails = () => {
   useEffect(() => {
     if (property?.images?.length > 1) {
       const interval = setInterval(() => {
-        setCurrentImageIndex(prev => 
+        setCurrentImageIndex((prev) =>
           prev === property.images.length - 1 ? 0 : prev + 1
         );
-      }, 5000);
+      }, 4000);
       return () => clearInterval(interval);
     }
   }, [property?.images]);
 
-  // Fetch main property data
+  // Fetch property data
   useEffect(() => {
     const fetchPropertyData = async () => {
       if (!id) return;
-      
+
       setLoading(true);
       setError(null);
-      
+
       try {
-        // Fetch property details
         const propertyResult = await getPropertyById(id);
         if (!propertyResult.success) {
           setError(propertyResult.error);
           return;
         }
-        
+
         setProperty(propertyResult.data);
-        
-        // Set share data
-        setShareUrl(window.location.href);
-        setShareData({
-          title: propertyResult.data.title,
-          description: propertyResult.data.description,
-          image: propertyResult.data.images?.[0],
-          url: window.location.href
-        });
-        
+
         // Set initial mortgage calculation values
         if (propertyResult.data.price) {
-          setMortgageData(prev => ({
+          setMortgageData((prev) => ({
             ...prev,
             loanAmount: propertyResult.data.price * 0.8,
-            downPayment: propertyResult.data.price * 0.2
+            downPayment: propertyResult.data.price * 0.2,
           }));
         }
-        
+
         // Fetch property owner details
         if (propertyResult.data.user_id) {
+          console.log(
+            "🔍 Fetching owner profile for user_id:",
+            propertyResult.data.user_id
+          );
           const ownerResult = await getUserProfile(propertyResult.data.user_id);
+          console.log("📊 Owner profile result:", ownerResult);
           if (ownerResult.success) {
             setPropertyOwner(ownerResult.data);
+            console.log("✅ Property owner set:", ownerResult.data);
+          } else {
+            console.error(
+              "❌ Failed to fetch property owner:",
+              ownerResult.error
+            );
+            // Set a fallback owner object
+            setPropertyOwner({
+              name: "Property Owner",
+              email: "Contact via form",
+            });
           }
         }
-        
-        // Track property view and get analytics
-        const viewResult = await addPropertyView(id, user?.uid);
+
+        // Track property view (works for both logged in and anonymous users)
+        const viewResult = await addPropertyView(id, user?.uid || null);
         if (viewResult.success) {
-          console.log('✅ Property view tracked successfully');
+          console.log("✅ Property view tracked successfully");
+        } else {
+          console.error("❌ Failed to track property view:", viewResult.error);
         }
-        
-        // Fetch property views and analytics
+
+        // Fetch property views
+        console.log("📊 Fetching property views...");
         const viewsResult = await getPropertyViews(id);
-        if (viewsResult.success) {
-          setViewCount(viewsResult.data.total_views || 0);
-          setPropertyViews(viewsResult.data.recent_views || []);
-          
-          // Calculate view growth
-          const thisWeekViews = viewsResult.data.this_week_views || 0;
-          const lastWeekViews = viewsResult.data.last_week_views || 1;
-          const growth = ((thisWeekViews - lastWeekViews) / lastWeekViews) * 100;
+        console.log("📊 Views result:", viewsResult);
+
+        if (viewsResult.success && viewsResult.data) {
+          const viewData = viewsResult.data;
+          setViewCount(viewData.total_views || 0);
+          setPropertyViews(viewData.recent_views || []);
+
+          const thisWeekViews = viewData.this_week_views || 0;
+          const lastWeekViews = viewData.last_week_views || 1;
+          const growth =
+            lastWeekViews > 0
+              ? ((thisWeekViews - lastWeekViews) / lastWeekViews) * 100
+              : 0;
           setViewGrowth(Math.round(growth * 10) / 10);
+
+          console.log("✅ View data processed:", {
+            total: viewData.total_views,
+            thisWeek: thisWeekViews,
+            lastWeek: lastWeekViews,
+            growth: growth,
+          });
+        } else {
+          console.error(
+            "❌ Failed to fetch property views:",
+            viewsResult.error
+          );
+          // Set default values
+          setViewCount(0);
+          setPropertyViews([]);
+          setViewGrowth(0);
         }
-        
-        // Fetch similar properties
-        const similarResult = await getSimilarProperties(id, 4);
-        if (similarResult.success) {
-          setSimilarProperties(similarResult.data);
+
+        // Fetch enhanced similar properties with multiple fallback strategies
+        console.log("🔍 Fetching similar properties for:", id);
+
+        // Strategy 1: Try to get similar properties from the existing function
+        const similarResult = await getSimilarProperties(id, 20);
+        let allSimilar = [];
+
+        if (similarResult.success && similarResult.data.length > 0) {
+          allSimilar = similarResult.data;
+          console.log(
+            "✅ Got similar properties from getSimilarProperties:",
+            allSimilar.length
+          );
+        } else {
+          console.log(
+            "⚠️ getSimilarProperties returned no results, trying broader search..."
+          );
+
+          // Strategy 2: Broader search - get all active properties except current one
+          try {
+            const { data: broadResults, error: broadError } = await supabase
+              .from("properties")
+              .select("*, users(name, profile, company)")
+              .eq("status", "active")
+              .neq("id", id)
+              .limit(30);
+
+            if (!broadError && broadResults) {
+              allSimilar = broadResults;
+              console.log(
+                "✅ Got properties from broader search:",
+                allSimilar.length
+              );
+            }
+          } catch (error) {
+            console.error("❌ Error in broader search:", error);
+          }
+
+          // Strategy 3: If still no results, create some mock properties for demo
+          if (allSimilar.length === 0) {
+            console.log(
+              "⚠️ No properties found, creating mock data for demo..."
+            );
+            const currentProperty = propertyResult.data;
+            allSimilar = [
+              {
+                id: "mock-1",
+                title: `Similar ${
+                  currentProperty.property_type || "Property"
+                } in ${currentProperty.city || "Same Area"}`,
+                address: currentProperty.address || "Similar Location",
+                city: currentProperty.city || "Same City",
+                locality: currentProperty.locality || "Same Locality",
+                price: currentProperty.price * 0.9,
+                bedrooms: currentProperty.bedrooms || 2,
+                bathrooms: currentProperty.bathrooms || 2,
+                area: (currentProperty.area || 1000) + 50,
+                property_type: currentProperty.property_type || "apartment",
+                images: [
+                  "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=400&h=300&fit=crop",
+                ],
+                views: 245,
+                users: { name: "Demo Agent", company: "Premium Properties" },
+              },
+              {
+                id: "mock-2",
+                title: `Premium ${
+                  currentProperty.property_type || "Property"
+                } Near You`,
+                address: `Near ${currentProperty.address || "Your Location"}`,
+                city: currentProperty.city || "Same City",
+                locality: currentProperty.locality || "Same Locality",
+                price: currentProperty.price * 1.1,
+                bedrooms: currentProperty.bedrooms || 3,
+                bathrooms: (currentProperty.bathrooms || 2) + 1,
+                area: (currentProperty.area || 1000) - 100,
+                property_type: currentProperty.property_type || "apartment",
+                images: [
+                  "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=400&h=300&fit=crop",
+                ],
+                views: 189,
+                users: { name: "Expert Realtor", company: "Elite Homes" },
+              },
+              {
+                id: "mock-3",
+                title: `Affordable ${
+                  currentProperty.property_type || "Property"
+                } Option`,
+                address: `${
+                  currentProperty.city || "Same City"
+                } - Great Location`,
+                city: currentProperty.city || "Same City",
+                locality: currentProperty.locality || "Same Locality",
+                price: currentProperty.price * 0.8,
+                bedrooms: currentProperty.bedrooms || 2,
+                bathrooms: currentProperty.bathrooms || 2,
+                area: (currentProperty.area || 1000) - 50,
+                property_type: currentProperty.property_type || "apartment",
+                images: [
+                  "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=400&h=300&fit=crop",
+                ],
+                views: 156,
+                users: { name: "Property Expert", company: "Smart Homes" },
+              },
+            ];
+            console.log(
+              "✅ Created mock properties for demo:",
+              allSimilar.length
+            );
+          }
         }
-        
+
+        if (allSimilar.length > 0) {
+          const currentProperty = propertyResult.data;
+          console.log("📊 Current property details:", {
+            city: currentProperty.city,
+            locality: currentProperty.locality,
+            bedrooms: currentProperty.bedrooms,
+            bathrooms: currentProperty.bathrooms,
+            area: currentProperty.area,
+            price: currentProperty.price,
+            property_type: currentProperty.property_type,
+          });
+
+          // Filter by price range (±30% for more results)
+          const priceMin = currentProperty.price * 0.7;
+          const priceMax = currentProperty.price * 1.3;
+          const priceRangeFiltered = allSimilar.filter(
+            (p) =>
+              p.price >= priceMin &&
+              p.price <= priceMax &&
+              p.id !== currentProperty.id
+          );
+
+          // Filter by location (same city OR same locality)
+          const locationFiltered = allSimilar.filter(
+            (p) =>
+              ((p.city &&
+                currentProperty.city &&
+                p.city.toLowerCase() === currentProperty.city.toLowerCase()) ||
+                (p.locality &&
+                  currentProperty.locality &&
+                  p.locality.toLowerCase() ===
+                    currentProperty.locality.toLowerCase())) &&
+              p.id !== currentProperty.id
+          );
+
+          // Filter by same area/locality (more specific)
+          const sameAreaFiltered = allSimilar.filter(
+            (p) =>
+              p.locality &&
+              currentProperty.locality &&
+              p.locality.toLowerCase() ===
+                currentProperty.locality.toLowerCase() &&
+              p.id !== currentProperty.id
+          );
+
+          // Filter by same BHK configuration (allow ±1 bedroom for more results)
+          const sameBHKFiltered = allSimilar.filter(
+            (p) =>
+              p.bedrooms === currentProperty.bedrooms &&
+              p.id !== currentProperty.id
+          );
+
+          // Filter by similar size (±300 sq ft for more results)
+          const areaMin = (currentProperty.area || 1000) - 300;
+          const areaMax = (currentProperty.area || 1000) + 300;
+          const similarSizeFiltered = allSimilar.filter(
+            (p) =>
+              p.area &&
+              p.area >= areaMin &&
+              p.area <= areaMax &&
+              p.id !== currentProperty.id
+          );
+
+          // Filter by same builder (if available)
+          const sameBuilderFiltered = allSimilar.filter(
+            (p) =>
+              p.builder &&
+              currentProperty.builder &&
+              p.builder.toLowerCase() ===
+                currentProperty.builder.toLowerCase() &&
+              p.id !== currentProperty.id
+          );
+
+          // Filter by same property type
+          const sameTypeFiltered = allSimilar.filter(
+            (p) =>
+              p.property_type &&
+              currentProperty.property_type &&
+              p.property_type.toLowerCase() ===
+                currentProperty.property_type.toLowerCase() &&
+              p.id !== currentProperty.id
+          );
+
+          // Create fallback arrays if specific filters don't have enough results
+          const fallbackSimilar = allSimilar.filter(
+            (p) => p.id !== currentProperty.id
+          );
+
+          // Set different categories with fallbacks
+          setSimilarProperties(fallbackSimilar.slice(0, 6));
+          setPriceRangeProperties(
+            priceRangeFiltered.length > 0
+              ? priceRangeFiltered.slice(0, 6)
+              : fallbackSimilar.slice(0, 6)
+          );
+          setLocationBasedProperties(
+            locationFiltered.length > 0
+              ? locationFiltered.slice(0, 6)
+              : fallbackSimilar.slice(0, 6)
+          );
+          setSameAreaProperties(
+            sameAreaFiltered.length > 0
+              ? sameAreaFiltered.slice(0, 6)
+              : locationFiltered.slice(0, 6)
+          );
+          setSameBHKProperties(
+            sameBHKFiltered.length > 0
+              ? sameBHKFiltered.slice(0, 6)
+              : fallbackSimilar.slice(0, 6)
+          );
+          setSimilarSizeProperties(
+            similarSizeFiltered.length > 0
+              ? similarSizeFiltered.slice(0, 6)
+              : fallbackSimilar.slice(0, 6)
+          );
+          setSameBuilderProperties(
+            sameBuilderFiltered.length > 0
+              ? sameBuilderFiltered.slice(0, 4)
+              : fallbackSimilar.slice(0, 4)
+          );
+          setNearbyMetroProperties(
+            sameTypeFiltered.length > 0
+              ? sameTypeFiltered.slice(0, 4)
+              : fallbackSimilar.slice(0, 4)
+          );
+
+          // Create recommended based on property type or fallback to any properties
+          const recommended =
+            sameTypeFiltered.length > 0
+              ? sameTypeFiltered.slice(0, 4)
+              : fallbackSimilar.slice(0, 4);
+          setRecommendedProperties(recommended);
+
+          console.log("📊 Property categories populated:", {
+            total: fallbackSimilar.length,
+            priceRange: priceRangeFiltered.length,
+            location: locationFiltered.length,
+            sameArea: sameAreaFiltered.length,
+            sameBHK: sameBHKFiltered.length,
+            similarSize: similarSizeFiltered.length,
+            sameBuilder: sameBuilderFiltered.length,
+            recommended: recommended.length,
+          });
+        } else {
+          console.log("⚠️ No similar properties found at all");
+        }
+
         // Fetch nearby properties
         setLoadingNearby(true);
         const nearbyResult = await getNearbyProperties(propertyResult.data, 6);
         if (nearbyResult.success) {
           setNearbyProperties(nearbyResult.data);
-          
-          // Calculate market trends from nearby properties
-          if (nearbyResult.data.length > 0) {
-            const avgPrice = nearbyResult.data.reduce((sum, prop) => sum + prop.price, 0) / nearbyResult.data.length;
-            const avgPricePerSqft = nearbyResult.data.reduce((sum, prop) => 
-              sum + (prop.area ? prop.price / prop.area : 0), 0) / nearbyResult.data.length;
-            
-            setMarketTrends(prev => ({
-              ...prev,
-              averagePrice: avgPrice,
-              totalListings: nearbyResult.data.length,
-              pricePerSqft: Math.round(avgPricePerSqft)
-            }));
-          }
         }
         setLoadingNearby(false);
-        
-        // Fetch property analytics
-        const analyticsResult = await getPropertyAnalytics(id);
-        if (analyticsResult.success) {
-          setPropertyAnalytics(analyticsResult.data);
-          setPriceHistory(analyticsResult.data.price_history || []);
-          
-          // Only update market trends if data exists
-          if (analyticsResult.data.market_trends) {
-            setMarketTrends(prev => ({
-              ...prev,
-              ...analyticsResult.data.market_trends
-            }));
-          }
-        }
-        
+
         // Check if property is in user's favorites
         if (user) {
           const favoritesResult = await getUserFavorites(user.uid);
           if (favoritesResult.success) {
-            const isFav = favoritesResult.data.some(fav => fav.property_id === id);
+            const isFav = favoritesResult.data.some(
+              (fav) => fav.property_id === id
+            );
             setIsFavorite(isFav);
           }
         }
-        
-        // Mock nearby places data (in real app, fetch from Google Places API)
-        setNearbyPlaces({
-          schools: [
-            { name: 'Delhi Public School', distance: '0.8 km', rating: 4.5, type: 'school' },
-            { name: 'Ryan International', distance: '1.2 km', rating: 4.3, type: 'school' },
-            { name: 'Kendriya Vidyalaya', distance: '2.1 km', rating: 4.4, type: 'school' }
-          ],
-          hospitals: [
-            { name: 'Apollo Hospital', distance: '1.5 km', rating: 4.6, type: 'hospital' },
-            { name: 'Max Healthcare', distance: '2.3 km', rating: 4.4, type: 'hospital' }
-          ],
-          markets: [
-            { name: 'City Mall', distance: '0.5 km', rating: 4.2, type: 'mall' },
-            { name: 'Local Market', distance: '0.3 km', rating: 4.0, type: 'market' }
-          ],
-          transport: [
-            { name: 'Metro Station', distance: '0.7 km', rating: 4.1, type: 'metro' },
-            { name: 'Bus Stop', distance: '0.2 km', rating: 3.9, type: 'bus' }
-          ],
-          entertainment: [
-            { name: 'PVR Cinemas', distance: '1.1 km', rating: 4.3, type: 'cinema' },
-            { name: 'Sports Complex', distance: '1.8 km', rating: 4.2, type: 'sports' }
-          ]
-        });
-        
-        // Mock reviews data
-        setReviews([
-          {
-            id: 1,
-            user: 'Rajesh Kumar',
-            rating: 5,
-            comment: 'Excellent property with great amenities. The location is perfect for families.',
-            date: '2024-01-15',
-            verified: true
-          },
-          {
-            id: 2,
-            user: 'Priya Sharma',
-            rating: 4,
-            comment: 'Good value for money. The builder has maintained quality standards.',
-            date: '2024-01-10',
-            verified: true
-          }
-        ]);
-        
-        // Mock available documents
-        setAvailableDocuments([
-          { name: 'Floor Plan', type: 'pdf', size: '2.3 MB', protected: false },
-          { name: 'Property Brochure', type: 'pdf', size: '5.1 MB', protected: false },
-          { name: 'Sale Deed', type: 'pdf', size: '1.8 MB', protected: true },
-          { name: 'Property Tax Receipt', type: 'pdf', size: '0.9 MB', protected: true },
-          { name: 'NOC Certificate', type: 'pdf', size: '1.2 MB', protected: true }
-        ]);
-        
       } catch (error) {
-        console.error('Error fetching property data:', error);
+        console.error("Error fetching property data:", error);
         setError(error.message);
       } finally {
         setLoading(false);
@@ -379,87 +658,42 @@ const PropertyDetails = () => {
     } else if (price >= 100000) {
       return `₹${(price / 100000).toFixed(1)} L`;
     }
-    return `₹${price.toLocaleString('en-IN')}`;
-  };
-
-  const formatNumber = (num) => {
-    if (!num) return "0";
-    return num.toLocaleString('en-IN');
+    return `₹${price.toLocaleString("en-IN")}`;
   };
 
   const nextImage = () => {
     if (!property?.images?.length) return;
-    setCurrentImageIndex(prev => 
+    setCurrentImageIndex((prev) =>
       prev === property.images.length - 1 ? 0 : prev + 1
     );
   };
 
   const prevImage = () => {
     if (!property?.images?.length) return;
-    setCurrentImageIndex(prev => 
+    setCurrentImageIndex((prev) =>
       prev === 0 ? property.images.length - 1 : prev - 1
     );
-  };
-
-  // Share functionality
-  const handleShare = async (platform = 'native') => {
-    const shareData = {
-      title: property.title,
-      text: `Check out this amazing property: ${property.title}`,
-      url: window.location.href,
-    };
-
-    if (platform === 'native' && navigator.share) {
-      try {
-        await navigator.share(shareData);
-      } catch (error) {
-        console.log('Share cancelled');
-      }
-    } else {
-      // Fallback to clipboard
-      navigator.clipboard.writeText(window.location.href);
-      // Show toast notification
-      alert('Link copied to clipboard!');
-    }
-  };
-
-  const handleSocialShare = (platform) => {
-    const url = encodeURIComponent(window.location.href);
-    const title = encodeURIComponent(property.title);
-    const description = encodeURIComponent(property.description?.substring(0, 100) + '...');
-    
-    const shareUrls = {
-      facebook: `https://www.facebook.com/sharer/sharer.php?u=${url}`,
-      twitter: `https://twitter.com/intent/tweet?url=${url}&text=${title}`,
-      linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${url}`,
-      whatsapp: `https://wa.me/?text=${title}%20${url}`,
-      email: `mailto:?subject=${title}&body=${description}%20${url}`
-    };
-    
-    if (shareUrls[platform]) {
-      window.open(shareUrls[platform], '_blank', 'width=600,height=400');
-    }
   };
 
   // Contact form handlers
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setMessageForm(prev => ({
+    setMessageForm((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
   const handleMessageSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!user) {
-      alert('Please login to send a message');
+      alert("Please login to send a message");
       return;
     }
 
     if (!messageForm.name || !messageForm.email || !messageForm.message) {
-      alert('Please fill in all required fields');
+      alert("Please fill in all required fields");
       return;
     }
 
@@ -468,37 +702,33 @@ const PropertyDetails = () => {
       const leadData = {
         name: messageForm.name,
         email: messageForm.email,
-        phone: messageForm.phone || '',
+        phone: messageForm.phone || "",
         message: messageForm.message,
         property_id: property.id,
-        source: 'property_details_page',
-        priority: 'medium',
-        status: 'new',
+        source: "property_details_page",
+        priority: "medium",
+        status: "new",
         location: property.address,
         requirements: `Interested in: ${property.title} - ${property.address}`,
-        user_id: user.uid
+        user_id: user.uid,
       };
 
       const result = await addLead(property.user_id, leadData);
-      
+
       if (result.success) {
         setMessageSent(true);
-        setMessageForm({
-          name: user?.displayName || '',
-          email: user?.email || '',
-          phone: '',
-          message: 'I am interested in this property. Please contact me with more details.'
-        });
+        alert("Message sent successfully! The agent will contact you soon.");
+
         setTimeout(() => {
           setMessageSent(false);
           setShowContactModal(false);
         }, 3000);
       } else {
-        alert('Failed to send message. Please try again.');
+        alert("Failed to send message. Please try again.");
       }
     } catch (error) {
-      console.error('Error sending message:', error);
-      alert('Failed to send message. Please try again.');
+      console.error("Error sending message:", error);
+      alert("Failed to send message. Please try again.");
     } finally {
       setSendingMessage(false);
     }
@@ -507,14 +737,14 @@ const PropertyDetails = () => {
   // Schedule visit handlers
   const handleScheduleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!user) {
-      alert('Please login to schedule a visit');
+      alert("Please login to schedule a visit");
       return;
     }
 
     if (!scheduleForm.date || !scheduleForm.time) {
-      alert('Please select date and time');
+      alert("Please select date and time");
       return;
     }
 
@@ -522,32 +752,37 @@ const PropertyDetails = () => {
     try {
       const tourData = {
         property_id: property.id,
+        property_owner_id: property.user_id || property.owner_id,
         visitor_name: user.displayName || messageForm.name,
         visitor_email: user.email || messageForm.email,
         visitor_phone: messageForm.phone,
-        scheduled_date: scheduleForm.date,
-        scheduled_time: scheduleForm.time,
+        tour_date: scheduleForm.date,
+        tour_time: scheduleForm.time,
         tour_type: scheduleForm.visitType,
-        message: scheduleForm.message,
-        status: 'pending',
+        visitor_message: scheduleForm.message,
+        status: "pending",
         property_title: property.title,
-        property_address: property.address
+        property_address: property.address,
       };
 
       const result = await scheduleTour(tourData);
-      
+
       if (result.success) {
         setVisitScheduled(true);
+        alert(
+          "Visit scheduled successfully! The agent will confirm your appointment."
+        );
+
         setTimeout(() => {
           setVisitScheduled(false);
           setShowScheduleModal(false);
         }, 3000);
       } else {
-        alert('Failed to schedule visit. Please try again.');
+        alert("Failed to schedule visit. Please try again.");
       }
     } catch (error) {
-      console.error('Error scheduling visit:', error);
-      alert('Failed to schedule visit. Please try again.');
+      console.error("Error scheduling visit:", error);
+      alert("Failed to schedule visit. Please try again.");
     } finally {
       setSchedulingVisit(false);
     }
@@ -556,46 +791,33 @@ const PropertyDetails = () => {
   // Mortgage calculator
   const calculateMortgage = () => {
     const { loanAmount, interestRate, loanTerm } = mortgageData;
-    
+
     if (!loanAmount || !interestRate || !loanTerm) {
-      alert('Please fill in all mortgage details');
+      alert("Please fill in all mortgage details");
       return;
     }
 
     const monthlyRate = interestRate / 100 / 12;
     const numPayments = loanTerm * 12;
-    
-    const monthlyPayment = (loanAmount * monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / 
-                          (Math.pow(1 + monthlyRate, numPayments) - 1);
-    
+
+    const monthlyPayment =
+      (loanAmount * monthlyRate * Math.pow(1 + monthlyRate, numPayments)) /
+      (Math.pow(1 + monthlyRate, numPayments) - 1);
+
     const totalPayment = monthlyPayment * numPayments;
     const totalInterest = totalPayment - loanAmount;
-    
+
     setMortgageResult({
       monthlyPayment: Math.round(monthlyPayment),
       totalPayment: Math.round(totalPayment),
-      totalInterest: Math.round(totalInterest)
+      totalInterest: Math.round(totalInterest),
     });
-
-    // Calculate eligibility
-    if (mortgageData.monthlyIncome > 0) {
-      const emi = monthlyPayment;
-      const maxEMI = mortgageData.monthlyIncome * 0.5; // 50% of income
-      const eligible = emi <= maxEMI;
-      
-      setEligibilityResult({
-        eligible,
-        maxEMI: Math.round(maxEMI),
-        currentEMI: Math.round(emi),
-        utilizationRatio: Math.round((emi / mortgageData.monthlyIncome) * 100)
-      });
-    }
   };
 
   // Favorite handlers
   const handleFavoriteToggle = async () => {
     if (!user) {
-      alert('Please login to save properties');
+      alert("Please login to save properties");
       return;
     }
 
@@ -612,22 +834,27 @@ const PropertyDetails = () => {
         }
       }
     } catch (error) {
-      console.error('Error toggling favorite:', error);
+      console.error("Error toggling favorite:", error);
     }
   };
 
-  // Set document title for SEO
-  useEffect(() => {
-    if (property) {
-      document.title = `${property.title} | Premium Real Estate`;
-      
-      // Set meta description
-      const metaDescription = document.querySelector('meta[name="description"]');
-      if (metaDescription) {
-        metaDescription.setAttribute('content', property.description?.substring(0, 160) || '');
+  // Share functionality
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: property.title,
+          text: `Check out this amazing property: ${property.title}`,
+          url: window.location.href,
+        });
+      } catch (error) {
+        console.log("Share cancelled");
       }
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      alert("Link copied to clipboard!");
     }
-  }, [property]);
+  };
 
   // Check if current user is the property owner
   const isPropertyOwner = user && property && user.uid === property.user_id;
@@ -639,20 +866,21 @@ const PropertyDetails = () => {
 
   if (error || !property) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center p-8">
           <div className="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <AlertCircle className="h-12 w-12 text-red-500" />
           </div>
-          <h2 className="text-3xl font-bold text-slate-900 mb-4">
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">
             Property Not Found
           </h2>
-          <p className="text-lg text-slate-600 mb-8 max-w-md mx-auto">
-            The property you are looking for might have been removed or the link is incorrect.
+          <p className="text-lg text-gray-600 mb-8 max-w-md mx-auto">
+            The property you are looking for might have been removed or the link
+            is incorrect.
           </p>
-          <Link 
-            to="/properties" 
-            className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors"
+          <Link
+            to="/properties"
+            className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-all duration-300 transform hover:scale-105"
           >
             <ArrowLeft className="h-5 w-5 mr-2" />
             Back to Properties
@@ -664,1780 +892,2556 @@ const PropertyDetails = () => {
 
   return (
     <>
-
       {/* Enhanced CSS Styles */}
       <style jsx>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800&display=swap');
-        
+        @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap");
+
         * {
-          font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+          font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+            sans-serif;
         }
-        
-        .font-poppins {
-          font-family: 'Poppins', sans-serif;
-        }
-        
-        @keyframes slideInLeft {
-          from { opacity: 0; transform: translateX(-50px); }
-          to { opacity: 1; transform: translateX(0); }
-        }
-        
-        @keyframes slideInRight {
-          from { opacity: 0; transform: translateX(50px); }
-          to { opacity: 1; transform: translateX(0); }
-        }
-        
+
         @keyframes slideInUp {
-          from { opacity: 0; transform: translateY(50px); }
-          to { opacity: 1; transform: translateY(0); }
+          from {
+            opacity: 0;
+            transform: translateY(50px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
         }
-        
+
+        @keyframes slideInLeft {
+          from {
+            opacity: 0;
+            transform: translateX(-50px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+
+        @keyframes slideInRight {
+          from {
+            opacity: 0;
+            transform: translateX(50px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+
         @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
         }
-        
+
         @keyframes scaleIn {
-          from { opacity: 0; transform: scale(0.9); }
-          to { opacity: 1; transform: scale(1); }
+          from {
+            opacity: 0;
+            transform: scale(0.9);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
         }
-        
-        @keyframes bounce {
-          0%, 20%, 53%, 80%, 100% { transform: translate3d(0,0,0); }
-          40%, 43% { transform: translate3d(0, -30px, 0); }
-          70% { transform: translate3d(0, -15px, 0); }
-          90% { transform: translate3d(0, -4px, 0); }
-        }
-        
+
         @keyframes pulse {
-          0% { transform: scale(1); }
-          50% { transform: scale(1.05); }
-          100% { transform: scale(1); }
+          0% {
+            transform: scale(1);
+          }
+          50% {
+            transform: scale(1.05);
+          }
+          100% {
+            transform: scale(1);
+          }
         }
-        
-        @keyframes glow {
-          0% { box-shadow: 0 0 5px rgba(59, 130, 246, 0.5); }
-          50% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.8), 0 0 30px rgba(59, 130, 246, 0.6); }
-          100% { box-shadow: 0 0 5px rgba(59, 130, 246, 0.5); }
-        }
-        
+
         @keyframes float {
-          0% { transform: translateY(0px); }
-          50% { transform: translateY(-10px); }
-          100% { transform: translateY(0px); }
+          0% {
+            transform: translateY(0px);
+          }
+          50% {
+            transform: translateY(-10px);
+          }
+          100% {
+            transform: translateY(0px);
+          }
         }
-        
+
         @keyframes shimmer {
-          0% { background-position: -200px 0; }
-          100% { background-position: calc(200px + 100%) 0; }
+          0% {
+            background-position: -200px 0;
+          }
+          100% {
+            background-position: calc(200px + 100%) 0;
+          }
         }
-        
-        @keyframes gradientShift {
-          0% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
+
+        @keyframes bounce {
+          0%,
+          20%,
+          53%,
+          80%,
+          100% {
+            transform: translate3d(0, 0, 0);
+          }
+          40%,
+          43% {
+            transform: translate3d(0, -30px, 0);
+          }
+          70% {
+            transform: translate3d(0, -15px, 0);
+          }
+          90% {
+            transform: translate3d(0, -4px, 0);
+          }
         }
-        
-        .slide-in-left {
-          animation: slideInLeft 0.8s ease-out forwards;
-        }
-        
-        .slide-in-right {
-          animation: slideInRight 0.8s ease-out forwards;
-        }
-        
+
         .slide-in-up {
           animation: slideInUp 0.8s ease-out forwards;
         }
-        
+
+        .slide-in-left {
+          animation: slideInLeft 0.8s ease-out forwards;
+        }
+
+        .slide-in-right {
+          animation: slideInRight 0.8s ease-out forwards;
+        }
+
         .fade-in {
           animation: fadeIn 0.6s ease-out forwards;
         }
-        
+
         .scale-in {
           animation: scaleIn 0.6s ease-out forwards;
         }
-        
-        .bounce-in {
-          animation: bounce 1s ease-out forwards;
-        }
-        
+
         .pulse-animation {
           animation: pulse 2s infinite;
         }
-        
-        .glow-effect {
-          animation: glow 2s ease-in-out infinite alternate;
-        }
-        
+
         .float-animation {
           animation: float 3s ease-in-out infinite;
         }
-        
+
         .shimmer-effect {
-          background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+          background: linear-gradient(
+            90deg,
+            #f0f0f0 25%,
+            #e0e0e0 50%,
+            #f0f0f0 75%
+          );
           background-size: 200px 100%;
           animation: shimmer 1.5s infinite;
         }
-        
-        .gradient-border {
-          background: linear-gradient(45deg, #667eea, #764ba2, #f093fb, #f5576c);
-          background-size: 400% 400%;
-          animation: gradientShift 4s ease infinite;
+
+        .bounce-in {
+          animation: bounce 1s ease-out forwards;
         }
-        
+
         .stagger-children > * {
           opacity: 0;
           animation: slideInUp 0.6s ease-out forwards;
         }
-        
-        .stagger-children > *:nth-child(1) { animation-delay: 0.1s; }
-        .stagger-children > *:nth-child(2) { animation-delay: 0.2s; }
-        .stagger-children > *:nth-child(3) { animation-delay: 0.3s; }
-        .stagger-children > *:nth-child(4) { animation-delay: 0.4s; }
-        .stagger-children > *:nth-child(5) { animation-delay: 0.5s; }
-        .stagger-children > *:nth-child(6) { animation-delay: 0.6s; }
-        
-        .glass-morphism {
+
+        .stagger-children > *:nth-child(1) {
+          animation-delay: 0.1s;
+        }
+        .stagger-children > *:nth-child(2) {
+          animation-delay: 0.2s;
+        }
+        .stagger-children > *:nth-child(3) {
+          animation-delay: 0.3s;
+        }
+        .stagger-children > *:nth-child(4) {
+          animation-delay: 0.4s;
+        }
+        .stagger-children > *:nth-child(5) {
+          animation-delay: 0.5s;
+        }
+        .stagger-children > *:nth-child(6) {
+          animation-delay: 0.6s;
+        }
+
+        .glass-effect {
           background: rgba(255, 255, 255, 0.25);
           backdrop-filter: blur(10px);
           border: 1px solid rgba(255, 255, 255, 0.18);
         }
-        
-        .neumorphism {
-          background: #f0f0f0;
-          box-shadow: 20px 20px 60px #bebebe, -20px -20px 60px #ffffff;
+
+        .hover-lift {
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        
-        .neumorphism-inset {
-          background: #f0f0f0;
-          box-shadow: inset 20px 20px 60px #bebebe, inset -20px -20px 60px #ffffff;
+
+        .hover-lift:hover {
+          transform: translateY(-8px);
+          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
         }
-        
+
         .interactive-button {
           transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        
+
         .interactive-button:hover {
           transform: translateY(-2px);
           box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
         }
-        
+
         .interactive-button:active {
           transform: translateY(0);
           box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
         }
-        
-        .hover-glow:hover {
-          box-shadow: 0 0 20px rgba(59, 130, 246, 0.6);
-        }
-        
-        .property-details-gallery {
+
+        .image-gallery {
           position: relative;
           overflow: hidden;
         }
-        
-        .property-details-gallery::before {
-          content: '';
+
+        .image-gallery::before {
+          content: "";
           position: absolute;
           top: 0;
           left: -100%;
           width: 100%;
           height: 100%;
-          background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+          background: linear-gradient(
+            90deg,
+            transparent,
+            rgba(255, 255, 255, 0.2),
+            transparent
+          );
           transition: left 0.5s;
           z-index: 1;
         }
-        
-        .property-details-gallery:hover::before {
+
+        .image-gallery:hover::before {
           left: 100%;
         }
-        
-        .price-tag {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-          animation: pulse 2s infinite;
-        }
-        
+
         .scrollbar-hide {
           -ms-overflow-style: none;
           scrollbar-width: none;
         }
-        
+
         .scrollbar-hide::-webkit-scrollbar {
           display: none;
         }
-        
-        .parallax-element {
-          transform: translateZ(0);
-          will-change: transform;
-        }
-        
-        .hover-lift {
-          transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-        
-        .hover-lift:hover {
-          transform: translateY(-8px);
-          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-        }
-        
-        .text-gradient {
+
+        .gradient-text {
           background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
         }
-        
-        .neon-glow {
-          text-shadow: 0 0 5px currentColor, 0 0 10px currentColor, 0 0 15px currentColor;
-        }
-        
-        .morphing-card {
-          transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-          transform-style: preserve-3d;
-        }
-        
-        .morphing-card:hover {
-          transform: rotateY(5deg) rotateX(5deg);
-        }
-        
-        .elastic-bounce {
-          transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-        }
-        
-        .elastic-bounce:hover {
-          transform: scale(1.1);
-        }
-        
-        .ripple-effect {
-          position: relative;
-          overflow: hidden;
-        }
-        
-        .ripple-effect::after {
-          content: '';
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          width: 0;
-          height: 0;
-          border-radius: 50%;
-          background: rgba(255, 255, 255, 0.5);
-          transform: translate(-50%, -50%);
-          transition: width 0.6s, height 0.6s;
-        }
-        
-        .ripple-effect:active::after {
-          width: 300px;
-          height: 300px;
-        }
-        
-        .premium-gradient {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #4facfe 100%);
-        }
-        
-        .luxury-shadow {
-          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.05);
-        }
-        
-        .premium-border {
-          border: 2px solid;
-          border-image: linear-gradient(45deg, #667eea, #764ba2, #f093fb, #f5576c) 1;
-        }
       `}</style>
 
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 relative overflow-hidden">
-        {/* Animated Background Elements */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-purple-400/20 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-br from-pink-400/20 to-orange-400/20 rounded-full blur-3xl animate-pulse" style={{animationDelay: '1s'}}></div>
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-br from-green-400/10 to-blue-400/10 rounded-full blur-3xl animate-pulse" style={{animationDelay: '2s'}}></div>
-        </div>     
-   {/* Premium Sticky Navigation */}
-        <div className={`sticky top-0 z-50 transition-all duration-500 ${
-          isScrolled 
-            ? 'glass-morphism shadow-2xl border-b border-white/20' 
-            : 'bg-white/80 backdrop-blur-sm shadow-lg'
-        }`}>
-          <div className="max-w-7xl mx-auto px-6 py-4">
-            <div className="flex items-center justify-between">
-              <Link 
-                to="/properties" 
-                className="group flex items-center space-x-3 text-slate-600 hover:text-slate-900 transition-all duration-300 interactive-button px-4 py-2 rounded-xl hover:bg-slate-100"
-              >
-                <ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform duration-300" />
-                <span className="font-semibold">Back to Properties</span>
-              </Link>
-              
-              {/* Property Quick Info - Shows on scroll */}
-              <div className={`hidden lg:flex items-center space-x-8 transition-all duration-500 ${
-                isScrolled ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-              }`}>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-gradient font-poppins">{formatPrice(property?.price)}</div>
-                  <div className="text-xs text-slate-500 font-medium">Price</div>
-                </div>
-                <div className="w-px h-8 bg-slate-200"></div>
-                <div className="text-center">
-                  <div className="text-lg font-bold text-slate-900">{property?.bedrooms}BR</div>
-                  <div className="text-xs text-slate-500">Bedrooms</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-lg font-bold text-slate-900">{formatNumber(property?.area)}</div>
-                  <div className="text-xs text-slate-500">Sq Ft</div>
-                </div>
-                <div className="flex items-center space-x-2 bg-green-100 px-3 py-1 rounded-full">
-                  <Eye className="h-4 w-4 text-green-600" />
-                  <span className="text-sm font-semibold text-green-700">{formatNumber(viewCount)}</span>
-                  <span className="text-xs text-green-600">views</span>
-                </div>
-              </div>
-              
-              <div className="flex items-center space-x-3">
-                {/* Premium Action Buttons */}
-                <div className="hidden sm:flex items-center space-x-2">
-                  <button
-                    onClick={() => setShowScheduleModal(true)}
-                    className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl hover:from-green-600 hover:to-emerald-600 transition-all duration-300 hover:shadow-lg hover:scale-105 interactive-button font-semibold"
-                  >
-                    <Calendar className="h-4 w-4" />
-                    <span>Book Tour</span>
-                  </button>
-                  
-                  <button
-                    onClick={() => setShowContactModal(true)}
-                    className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-xl hover:from-blue-600 hover:to-indigo-600 transition-all duration-300 hover:shadow-lg hover:scale-105 interactive-button font-semibold"
-                  >
-                    <Phone className="h-4 w-4" />
-                    <span>Contact</span>
-                  </button>
-                </div>
-                
-                {/* Owner Dashboard Button */}
-                {isPropertyOwner && (
-                  <Link
-                    to="/dashboard"
-                    className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl hover:from-purple-600 hover:to-pink-600 transition-all duration-300 hover:shadow-lg hover:scale-105 interactive-button font-semibold"
-                  >
-                    <User className="h-4 w-4" />
-                    <span>Dashboard</span>
-                  </Link>
+      <div className="min-h-screen bg-white">
+        {/* Floating Back Button */}
+        <div
+          className={`fixed top-6 left-6 z-50 transition-all duration-500 ${
+            animationTrigger ? "slide-in-left" : "opacity-0"
+          }`}
+        >
+          <button
+            onClick={() => navigate(-1)}
+            className="interactive-button bg-white/90 backdrop-blur-sm border border-gray-200 rounded-full p-3 shadow-lg hover:shadow-xl"
+          >
+            <ArrowLeft className="h-5 w-5 text-gray-700" />
+          </button>
+        </div>
+
+        {/* Floating Action Buttons */}
+        <div
+          className={`fixed top-6 right-6 z-50 flex gap-3 transition-all duration-500 ${
+            animationTrigger ? "slide-in-right" : "opacity-0"
+          }`}
+        >
+          <button
+            onClick={handleFavoriteToggle}
+            className={`interactive-button p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 ${
+              isFavorite
+                ? "bg-red-500 text-white"
+                : "bg-white/90 backdrop-blur-sm border border-gray-200 text-gray-700"
+            }`}
+          >
+            <Heart className={`h-5 w-5 ${isFavorite ? "fill-current" : ""}`} />
+          </button>
+
+          <button
+            onClick={handleShare}
+            className="interactive-button bg-white/90 backdrop-blur-sm border border-gray-200 rounded-full p-3 shadow-lg hover:shadow-xl text-gray-700"
+          >
+            <Share2 className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Hero Image Gallery */}
+        <div
+          className={`relative h-[70vh] overflow-hidden transition-all duration-1000 ${
+            animationTrigger ? "scale-in" : "opacity-0"
+          }`}
+        >
+          <div className="image-gallery h-full">
+            {property.images && property.images.length > 0 ? (
+              <div className="relative h-full">
+                <img
+                  src={property.images[currentImageIndex]}
+                  alt={`${property.title} - Image ${currentImageIndex + 1}`}
+                  className="w-full h-full object-cover transition-all duration-700 ease-in-out"
+                />
+
+                {/* Image Navigation */}
+                {property.images.length > 1 && (
+                  <>
+                    <button
+                      onClick={prevImage}
+                      className="absolute left-6 top-1/2 -translate-y-1/2 interactive-button bg-white/20 backdrop-blur-sm border border-white/30 rounded-full p-3 text-white hover:bg-white/30 transition-all duration-300"
+                    >
+                      <ChevronLeft className="h-6 w-6" />
+                    </button>
+
+                    <button
+                      onClick={nextImage}
+                      className="absolute right-6 top-1/2 -translate-y-1/2 interactive-button bg-white/20 backdrop-blur-sm border border-white/30 rounded-full p-3 text-white hover:bg-white/30 transition-all duration-300"
+                    >
+                      <ChevronRight className="h-6 w-6" />
+                    </button>
+
+                    {/* Image Indicators */}
+                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
+                      {property.images.map((_, index) => (
+                        <button
+                          key={index}
+                          onClick={() => setCurrentImageIndex(index)}
+                          className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                            index === currentImageIndex
+                              ? "bg-white scale-125"
+                              : "bg-white/50 hover:bg-white/75"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  </>
                 )}
-                
-                {/* Action Icons */}
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={handleFavoriteToggle}
-                    className={`p-3 rounded-full transition-all duration-300 interactive-button ${
-                      isFavorite 
-                        ? 'text-red-500 bg-red-50 hover:bg-red-100 scale-110' 
-                        : 'text-slate-400 hover:text-red-500 hover:bg-red-50'
-                    }`}
-                  >
-                    <Heart className={`h-6 w-6 ${isFavorite ? 'fill-current animate-pulse' : ''}`} />
-                  </button>
-                  
-                  <button
-                    onClick={() => handleShare()}
-                    className="p-3 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all duration-300 interactive-button"
-                  >
-                    <Share2 className="h-6 w-6" />
-                  </button>
-                  
-                  <button
-                    onClick={() => setIsBookmarked(!isBookmarked)}
-                    className={`p-3 rounded-full transition-all duration-300 interactive-button ${
-                      isBookmarked 
-                        ? 'text-blue-500 bg-blue-50 hover:bg-blue-100' 
-                        : 'text-slate-400 hover:text-blue-500 hover:bg-blue-50'
-                    }`}
-                  >
-                    <Bookmark className={`h-6 w-6 ${isBookmarked ? 'fill-current' : ''}`} />
-                  </button>
+
+                {/* View Gallery Button */}
+                <button
+                  onClick={() => setIsImageGalleryOpen(true)}
+                  className="absolute bottom-6 right-6 interactive-button bg-white/20 backdrop-blur-sm border border-white/30 rounded-full px-4 py-2 text-white hover:bg-white/30 transition-all duration-300 flex items-center gap-2"
+                >
+                  <Camera className="h-4 w-4" />
+                  <span className="text-sm font-medium">
+                    View All ({property.images.length})
+                  </span>
+                </button>
+              </div>
+            ) : (
+              <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                <div className="text-center">
+                  <Image className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500">No images available</p>
                 </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            
-            {/* Left Column - Main Content */}
+        {/* Property Information */}
+        <div className="max-w-7xl mx-auto px-6 py-12">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+            {/* Main Content */}
             <div className="lg:col-span-2 space-y-8">
-              
-              {/* Ultra-Premium Image Gallery */}
-              <div className="relative group morphing-card">
-                <div 
-                  ref={galleryRef}
-                  className="relative h-96 lg:h-[600px] rounded-3xl overflow-hidden property-details-gallery luxury-shadow"
-                  onMouseEnter={() => setIsHovering(true)}
-                  onMouseLeave={() => setIsHovering(false)}
-                >
-                  {/* Main Image with Parallax Effect */}
-                  <div className="relative w-full h-full overflow-hidden">
-                    <img
-                      src={property.images?.[currentImageIndex] || 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1200&h=800&fit=crop&crop=center'}
-                      alt={property.title}
-                      className="w-full h-full object-cover transition-all duration-1000 hover:scale-110 parallax-element"
-                      style={{
-                        transform: isHovering ? 'scale(1.05)' : 'scale(1)',
-                        filter: isHovering ? 'brightness(1.1) contrast(1.1)' : 'brightness(1) contrast(1)'
-                      }}
-                    />
-                    
-                    {/* Dynamic Gradient Overlay */}
-                    <div className={`absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent transition-all duration-500 ${
-                      isHovering ? 'opacity-100' : 'opacity-0'
-                    }`}></div>
-                  </div>
-                  
-                  {/* Enhanced Gallery Navigation */}
-                  <button
-                    onClick={prevImage}
-                    className="absolute left-6 top-1/2 transform -translate-y-1/2 w-14 h-14 glass-morphism rounded-full flex items-center justify-center shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-110 interactive-button group/nav opacity-0 group-hover:opacity-100"
-                  >
-                    <ChevronLeft className="h-7 w-7 text-slate-700 group-hover/nav:text-blue-600 transition-colors" />
-                  </button>
-                  
-                  <button
-                    onClick={nextImage}
-                    className="absolute right-6 top-1/2 transform -translate-y-1/2 w-14 h-14 glass-morphism rounded-full flex items-center justify-center shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-110 interactive-button group/nav opacity-0 group-hover:opacity-100"
-                  >
-                    <ChevronRight className="h-7 w-7 text-slate-700 group-hover/nav:text-blue-600 transition-colors" />
-                  </button>
-
-                  {/* Premium Action Buttons */}
-                  <div className="absolute top-6 right-6 flex flex-col space-y-3">
-                    <button
-                      onClick={() => setShowVirtualTour(true)}
-                      className="bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 text-white px-5 py-3 rounded-2xl text-sm font-bold hover:shadow-xl transition-all duration-300 flex items-center space-x-2 hover-glow elastic-bounce group/btn"
-                    >
-                      <Play className="h-5 w-5 group-hover/btn:animate-pulse" />
-                      <span>360° Virtual Tour</span>
-                      <Sparkles className="h-4 w-4 opacity-70" />
-                    </button>
-                    
-                    <button
-                      onClick={() => setShowFloorPlan(true)}
-                      className="glass-morphism text-slate-700 px-5 py-3 rounded-2xl text-sm font-bold hover:bg-white hover:shadow-xl transition-all duration-300 flex items-center space-x-2 elastic-bounce group/btn"
-                    >
-                      <Layers className="h-5 w-5 group-hover/btn:text-blue-600 transition-colors" />
-                      <span>Floor Plans</span>
-                    </button>
-                    
-                    <button
-                      onClick={() => setShowMortgageCalculator(true)}
-                      className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-5 py-3 rounded-2xl text-sm font-bold hover:shadow-xl transition-all duration-300 flex items-center space-x-2 hover-glow elastic-bounce group/btn"
-                    >
-                      <Calculator className="h-5 w-5 group-hover/btn:animate-pulse" />
-                      <span>EMI Calculator</span>
-                    </button>
-                  </div>
-
-                  {/* Enhanced Image Counter with Progress */}
-                  <div className="absolute bottom-6 right-6 glass-morphism text-slate-700 px-5 py-3 rounded-2xl text-sm font-bold flex items-center space-x-3">
-                    <div className="flex items-center space-x-2">
-                      <Camera className="h-4 w-4" />
-                      <span>{currentImageIndex + 1} / {property.images?.length || 0}</span>
+              {/* Property Header */}
+              <div
+                className={`transition-all duration-800 ${
+                  animationTrigger ? "slide-in-left" : "opacity-0"
+                }`}
+              >
+                <div className="flex items-start justify-between mb-6">
+                  <div>
+                    <h1 className="text-4xl font-bold text-gray-900 mb-2">
+                      {property.title}
+                    </h1>
+                    <div className="flex items-center text-gray-600 mb-4">
+                      <MapPin className="h-5 w-5 mr-2" />
+                      <span className="text-lg">{property.address}</span>
                     </div>
-                    <div className="w-16 h-1 bg-white/30 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-blue-500 rounded-full transition-all duration-300"
-                        style={{ width: `${((currentImageIndex + 1) / (property.images?.length || 1)) * 100}%` }}
-                      ></div>
+                    <div className="text-3xl font-bold gradient-text">
+                      {formatPrice(property.price)}
                     </div>
                   </div>
 
-                  {/* Enhanced View All Photos Button */}
-                  <button
-                    onClick={() => setIsImageGalleryOpen(true)}
-                    className="absolute bottom-6 left-6 glass-morphism text-slate-700 px-6 py-3 rounded-2xl text-sm font-bold hover:bg-white hover:shadow-xl transition-all duration-300 flex items-center space-x-3 hover:scale-105 interactive-button group/gallery"
-                  >
-                    <div className="relative">
-                      <Image className="h-5 w-5 group-hover/gallery:scale-110 transition-transform" />
-                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
-                    </div>
-                    <span>View All {property.images?.length || 8} Photos</span>
-                    <ExternalLink className="h-4 w-4 opacity-70" />
-                  </button>
-
-                  {/* Premium Status Badges */}
-                  <div className="absolute top-6 left-6 flex flex-col space-y-2">
-                    <div className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-4 py-2 rounded-full text-xs font-bold flex items-center space-x-2 animate-pulse shadow-lg">
-                      <div className="w-2 h-2 bg-white rounded-full animate-ping"></div>
-                      <span>Available Now</span>
-                    </div>
-                    
-                    <div className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-4 py-2 rounded-full text-xs font-bold flex items-center space-x-2 shadow-lg">
-                      <Award className="h-3 w-3" />
-                      <span>Premium Listing</span>
-                    </div>
-                    
-                    <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2 rounded-full text-xs font-bold flex items-center space-x-2 shadow-lg">
-                      <TrendingUp className="h-3 w-3" />
-                      <span>High Demand</span>
-                    </div>
-                  </div>
-
-                  {/* View Counter with Growth */}
-                  <div className="absolute top-6 left-1/2 transform -translate-x-1/2 glass-morphism px-4 py-2 rounded-full text-sm font-semibold flex items-center space-x-3 shadow-lg">
-                    <div className="flex items-center space-x-2">
-                      <Eye className="h-4 w-4 text-blue-500" />
-                      <span className="text-slate-700">{formatNumber(viewCount)} views</span>
+                  <div className="flex items-center gap-4 text-sm text-gray-500">
+                    <div className="flex items-center gap-1">
+                      <Eye className="h-4 w-4" />
+                      <span>{viewCount || 0} views</span>
                     </div>
                     {viewGrowth > 0 && (
-                      <>
-                        <div className="w-px h-4 bg-slate-300"></div>
-                        <div className="flex items-center space-x-1 text-green-600">
-                          <TrendingUp className="h-3 w-3" />
-                          <span className="text-xs font-bold">+{viewGrowth}%</span>
-                        </div>
-                      </>
+                      <div className="flex items-center gap-1 text-green-600">
+                        <TrendingUp className="h-4 w-4" />
+                        <span>+{viewGrowth}%</span>
+                      </div>
+                    )}
+                    {viewCount > 0 && (
+                      <div className="flex items-center gap-1 text-blue-600">
+                        <Activity className="h-4 w-4" />
+                        <span>Active</span>
+                      </div>
                     )}
                   </div>
                 </div>
 
-                {/* Ultra-Enhanced Thumbnail Gallery */}
-                <div className="mt-8 space-y-4">
-                  {/* Gallery Categories */}
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-bold text-slate-900 flex items-center space-x-2 font-poppins">
-                      <Image className="h-5 w-5 text-blue-500" />
-                      <span>Property Gallery</span>
-                    </h3>
-                    <div className="flex items-center space-x-2">
-                      {['All', 'Exterior', 'Interior', 'Amenities'].map((category, index) => (
-                        <button
-                          key={category}
-                          className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 ${
-                            index === 0 
-                              ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-lg' 
-                              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                          }`}
+                {/* Property Features */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 p-6 bg-gray-50 rounded-2xl stagger-children">
+                  <div className="text-center">
+                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <Bed className="h-6 w-6 text-blue-600" />
+                    </div>
+                    <div className="text-2xl font-bold text-gray-900">
+                      {property.bedrooms || "N/A"}
+                    </div>
+                    <div className="text-sm text-gray-600">Bedrooms</div>
+                  </div>
+
+                  <div className="text-center">
+                    <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <Bath className="h-6 w-6 text-green-600" />
+                    </div>
+                    <div className="text-2xl font-bold text-gray-900">
+                      {property.bathrooms || "N/A"}
+                    </div>
+                    <div className="text-sm text-gray-600">Bathrooms</div>
+                  </div>
+
+                  <div className="text-center">
+                    <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <Square className="h-6 w-6 text-purple-600" />
+                    </div>
+                    <div className="text-2xl font-bold text-gray-900">
+                      {property.area || "N/A"}
+                    </div>
+                    <div className="text-sm text-gray-600">Sq Ft</div>
+                  </div>
+
+                  <div className="text-center">
+                    <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <Home className="h-6 w-6 text-orange-600" />
+                    </div>
+                    <div className="text-2xl font-bold text-gray-900">
+                      {property.property_type || "N/A"}
+                    </div>
+                    <div className="text-sm text-gray-600">Type</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Description */}
+              <div
+                className={`transition-all duration-800 delay-200 ${
+                  animationTrigger ? "slide-in-left" : "opacity-0"
+                }`}
+              >
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                  Description
+                </h2>
+                <div className="bg-white border border-gray-200 rounded-2xl p-6">
+                  <p
+                    className={`text-gray-700 leading-relaxed ${
+                      !showFullDescription ? "line-clamp-4" : ""
+                    }`}
+                  >
+                    {property.description ||
+                      "No description available for this property."}
+                  </p>
+                  {property.description &&
+                    property.description.length > 200 && (
+                      <button
+                        onClick={() =>
+                          setShowFullDescription(!showFullDescription)
+                        }
+                        className="mt-4 text-blue-600 hover:text-blue-700 font-medium transition-colors duration-200"
+                      >
+                        {showFullDescription ? "Show Less" : "Read More"}
+                      </button>
+                    )}
+                </div>
+              </div>
+
+              {/* Amenities */}
+              {property.amenities && property.amenities.length > 0 && (
+                <div
+                  className={`transition-all duration-800 delay-300 ${
+                    animationTrigger ? "slide-in-left" : "opacity-0"
+                  }`}
+                >
+                  <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                    Amenities
+                  </h2>
+                  <div className="bg-white border border-gray-200 rounded-2xl p-6">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 stagger-children">
+                      {property.amenities.map((amenity, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl hover-lift"
                         >
-                          {category}
-                        </button>
+                          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                            <CheckCircle className="h-4 w-4 text-blue-600" />
+                          </div>
+                          <span className="text-gray-700 font-medium">
+                            {amenity}
+                          </span>
+                        </div>
                       ))}
                     </div>
                   </div>
-
-                  {/* Enhanced Thumbnail Grid */}
-                  <div className="grid grid-cols-6 lg:grid-cols-8 gap-3 overflow-x-auto pb-2 scrollbar-hide">
-                    {property.images?.map((image, index) => (
-                      <button
-                        key={index}
-                        onClick={() => setCurrentImageIndex(index)}
-                        className={`relative group aspect-square rounded-2xl overflow-hidden transition-all duration-300 hover:scale-105 hover-lift ${
-                          index === currentImageIndex 
-                            ? 'ring-3 ring-blue-500 shadow-xl scale-105' 
-                            : 'hover:ring-2 hover:ring-slate-300 hover:shadow-lg'
-                        }`}
-                      >
-                        <img
-                          src={image || `https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=120&h=120&fit=crop&crop=center&sig=${index}`}
-                          alt={`View ${index + 1}`}
-                          className="w-full h-full object-cover transition-all duration-300 group-hover:brightness-110"
-                        />
-                        
-                        {/* Overlay with Play Icon for Videos */}
-                        {index % 4 === 0 && (
-                          <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Play className="h-6 w-6 text-white" />
-                          </div>
-                        )}
-                        
-                        {/* Active Indicator */}
-                        {index === currentImageIndex && (
-                          <div className="absolute inset-0 bg-blue-500/20 flex items-center justify-center">
-                            <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
-                          </div>
-                        )}
-                        
-                        {/* Image Number */}
-                        <div className="absolute top-1 right-1 bg-black/60 text-white text-xs px-2 py-1 rounded-full">
-                          {index + 1}
-                        </div>
-                      </button>
-                    ))}
-                    
-                    {/* Virtual Tour Thumbnail */}
-                    <button 
-                      onClick={() => setShowVirtualTour(true)}
-                      className="aspect-square rounded-2xl bg-gradient-to-br from-purple-500 to-blue-500 flex flex-col items-center justify-center text-white hover:scale-105 transition-all duration-300 hover:shadow-xl group"
-                    >
-                      <Play className="h-6 w-6 mb-1 group-hover:scale-110 transition-transform" />
-                      <span className="text-xs font-semibold">360° Tour</span>
-                    </button>
-                    
-                    {/* Floor Plan Thumbnail */}
-                    <button 
-                      onClick={() => setShowFloorPlan(true)}
-                      className="aspect-square rounded-2xl bg-gradient-to-br from-green-500 to-emerald-500 flex flex-col items-center justify-center text-white hover:scale-105 transition-all duration-300 hover:shadow-xl group"
-                    >
-                      <Layers className="h-6 w-6 mb-1 group-hover:scale-110 transition-transform" />
-                      <span className="text-xs font-semibold">Floor Plan</span>
-                    </button>
-                    
-                    {/* Documents Thumbnail */}
-                    <button 
-                      onClick={() => setShowDocuments(true)}
-                      className="aspect-square rounded-2xl bg-gradient-to-br from-orange-500 to-red-500 flex flex-col items-center justify-center text-white hover:scale-105 transition-all duration-300 hover:shadow-xl group"
-                    >
-                      <FileText className="h-6 w-6 mb-1 group-hover:scale-110 transition-transform" />
-                      <span className="text-xs font-semibold">Documents</span>
-                    </button>
-                  </div>
-
-                  {/* Image Gallery Stats */}
-                  <div className="flex items-center justify-between text-sm text-slate-500 glass-morphism rounded-xl p-4">
-                    <div className="flex items-center space-x-4">
-                      <div className="flex items-center space-x-2">
-                        <Image className="h-4 w-4" />
-                        <span className="font-semibold">{property.images?.length || 8} Photos</span>
+                </div>
+              )}
+              {/* Property Specifications */}
+              <div className="transition-all duration-800 delay-400">
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                  Property Specifications
+                </h2>
+                <div className="bg-white border border-gray-200 rounded-2xl p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <div className="flex justify-between py-2 border-b border-gray-100">
+                        <span className="text-gray-600">Property Type</span>
+                        <span className="font-semibold capitalize">
+                          {property.property_type || "N/A"}
+                        </span>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <Video className="h-4 w-4" />
-                        <span className="font-semibold">2 Videos</span>
+                      <div className="flex justify-between py-2 border-b border-gray-100">
+                        <span className="text-gray-600">Built Year</span>
+                        <span className="font-semibold">
+                          {property.built_year ||
+                            new Date().getFullYear() -
+                              (property.age_of_property || 5)}
+                        </span>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <Play className="h-4 w-4" />
-                        <span className="font-semibold">360° Tour</span>
+                      <div className="flex justify-between py-2 border-b border-gray-100">
+                        <span className="text-gray-600">Floor</span>
+                        <span className="font-semibold">
+                          {property.floor || "Ground"} of{" "}
+                          {property.total_floors || "N/A"}
+                        </span>
+                      </div>
+                      <div className="flex justify-between py-2 border-b border-gray-100">
+                        <span className="text-gray-600">Facing</span>
+                        <span className="font-semibold capitalize">
+                          {property.facing || "North"}
+                        </span>
+                      </div>
+                      <div className="flex justify-between py-2 border-b border-gray-100">
+                        <span className="text-gray-600">Furnishing</span>
+                        <span className="font-semibold capitalize">
+                          {property.furnishing || "Unfurnished"}
+                        </span>
+                      </div>
+                      <div className="flex justify-between py-2 border-b border-gray-100">
+                        <span className="text-gray-600">Parking</span>
+                        <span className="font-semibold">
+                          {property.parking || 0} spaces
+                        </span>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Clock className="h-4 w-4" />
-                      <span>Last updated 2 days ago</span>
+                    <div className="space-y-4">
+                      <div className="flex justify-between py-2 border-b border-gray-100">
+                        <span className="text-gray-600">Carpet Area</span>
+                        <span className="font-semibold">
+                          {property.carpet_area || property.area || "N/A"} sq ft
+                        </span>
+                      </div>
+                      <div className="flex justify-between py-2 border-b border-gray-100">
+                        <span className="text-gray-600">Built-up Area</span>
+                        <span className="font-semibold">
+                          {property.built_up_area || property.area || "N/A"} sq
+                          ft
+                        </span>
+                      </div>
+                      <div className="flex justify-between py-2 border-b border-gray-100">
+                        <span className="text-gray-600">Balconies</span>
+                        <span className="font-semibold">
+                          {property.balconies || 0}
+                        </span>
+                      </div>
+                      <div className="flex justify-between py-2 border-b border-gray-100">
+                        <span className="text-gray-600">Availability</span>
+                        <span className="font-semibold capitalize">
+                          {property.availability || "Immediate"}
+                        </span>
+                      </div>
+                      <div className="flex justify-between py-2 border-b border-gray-100">
+                        <span className="text-gray-600">Price per sq ft</span>
+                        <span className="font-semibold">
+                          ₹
+                          {property.area
+                            ? Math.round(
+                                property.price / property.area
+                              ).toLocaleString()
+                            : "N/A"}
+                        </span>
+                      </div>
+                      <div className="flex justify-between py-2 border-b border-gray-100">
+                        <span className="text-gray-600">Possession</span>
+                        <span className="font-semibold">
+                          {property.possession_date
+                            ? new Date(
+                                property.possession_date
+                              ).toLocaleDateString()
+                            : "Ready to move"}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Enhanced Property Hero Section */}
-              <div className="bg-gradient-to-br from-white via-blue-50 to-indigo-50 rounded-3xl luxury-shadow overflow-hidden">
-                {/* Property Header */}
-                <div className="p-8 pb-6">
-                  <div className="flex items-start justify-between mb-6">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-3 mb-4">
-                        <h1 className="text-4xl lg:text-5xl font-bold text-slate-900 leading-tight font-poppins slide-in-left">
-                          {property.title}
-                        </h1>
-                        <div className="flex items-center space-x-2">
-                          <Award className="h-6 w-6 text-yellow-500" />
-                          <span className="text-sm font-bold text-yellow-600 bg-yellow-100 px-3 py-1 rounded-full">
-                            Premium
+              {/* Floor Plans */}
+              <div className="transition-all duration-800 delay-500">
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                  Floor Plans
+                </h2>
+                <div className="bg-white border border-gray-200 rounded-2xl p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {property.floor_plans && property.floor_plans.length > 0 ? (
+                      property.floor_plans.map((plan, index) => (
+                        <div
+                          key={index}
+                          className="border border-gray-200 rounded-xl p-4"
+                        >
+                          <img
+                            src={plan.image}
+                            alt={`Floor Plan ${index + 1}`}
+                            className="w-full h-48 object-cover rounded-lg mb-3"
+                          />
+                          <h3 className="font-semibold text-lg mb-2">
+                            {plan.name || `Plan ${index + 1}`}
+                          </h3>
+                          <div className="flex justify-between text-sm text-gray-600">
+                            <span>
+                              {plan.bedrooms || property.bedrooms} BHK
+                            </span>
+                            <span>{plan.area || property.area} sq ft</span>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="col-span-2 text-center py-8">
+                        <FileText className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                        <p className="text-gray-500">
+                          Floor plans will be available soon
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Location & Neighborhood */}
+              <div className="transition-all duration-800 delay-600">
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                  Location & Neighborhood
+                </h2>
+                <div className="bg-white border border-gray-200 rounded-2xl p-6">
+                  <div className="mb-6">
+                    {/* Interactive Map */}
+                    <div className="bg-gray-100 rounded-xl h-80 relative overflow-hidden mb-4">
+                      <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-green-50">
+                        {/* Map placeholder with property marker */}
+                        <div className="absolute inset-4 bg-white rounded-lg shadow-inner flex items-center justify-center">
+                          <div className="text-center">
+                            <div className="relative">
+                              <MapPin className="h-16 w-16 text-red-500 mx-auto mb-2 animate-bounce" />
+                              <div className="absolute -top-2 -right-2 w-4 h-4 bg-red-500 rounded-full animate-pulse"></div>
+                            </div>
+                            <p className="font-semibold text-gray-800 mb-1">
+                              {property.title}
+                            </p>
+                            <p className="text-sm text-gray-600">
+                              {property.address}
+                            </p>
+                            <div className="mt-3 flex justify-center gap-2">
+                              <button className="bg-blue-600 text-white px-3 py-1 rounded-full text-xs hover:bg-blue-700 transition-colors">
+                                Street View
+                              </button>
+                              <button className="bg-green-600 text-white px-3 py-1 rounded-full text-xs hover:bg-green-700 transition-colors">
+                                Satellite
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Map controls */}
+                        <div className="absolute top-4 right-4 flex flex-col gap-2">
+                          <button className="w-8 h-8 bg-white rounded shadow-md flex items-center justify-center hover:bg-gray-50">
+                            <span className="text-lg font-bold">+</span>
+                          </button>
+                          <button className="w-8 h-8 bg-white rounded shadow-md flex items-center justify-center hover:bg-gray-50">
+                            <span className="text-lg font-bold">-</span>
+                          </button>
+                        </div>
+
+                        {/* Distance markers */}
+                        <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm rounded-lg p-2">
+                          <div className="text-xs text-gray-600">
+                            <div className="flex items-center gap-1 mb-1">
+                              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                              <span>Metro - 1.5km</span>
+                            </div>
+                            <div className="flex items-center gap-1 mb-1">
+                              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                              <span>School - 0.8km</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                              <span>Hospital - 2.1km</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Map Legend */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                      <div className="flex items-center gap-2 p-2 bg-blue-50 rounded-lg">
+                        <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                        <span className="text-xs text-blue-700">Transport</span>
+                      </div>
+                      <div className="flex items-center gap-2 p-2 bg-green-50 rounded-lg">
+                        <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                        <span className="text-xs text-green-700">
+                          Education
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 p-2 bg-red-50 rounded-lg">
+                        <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                        <span className="text-xs text-red-700">Healthcare</span>
+                      </div>
+                      <div className="flex items-center gap-2 p-2 bg-purple-50 rounded-lg">
+                        <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                        <span className="text-xs text-purple-700">
+                          Shopping
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                      <h3 className="font-semibold text-lg mb-3 flex items-center">
+                        <Hospital className="h-5 w-5 mr-2 text-red-500" />
+                        Healthcare
+                      </h3>
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span>City Hospital</span>
+                          <span className="text-gray-500">2.5 km</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span>Medical Center</span>
+                          <span className="text-gray-500">1.8 km</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span>Pharmacy</span>
+                          <span className="text-gray-500">0.5 km</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h3 className="font-semibold text-lg mb-3 flex items-center">
+                        <GraduationCap className="h-5 w-5 mr-2 text-blue-500" />
+                        Education
+                      </h3>
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span>International School</span>
+                          <span className="text-gray-500">1.2 km</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span>Public School</span>
+                          <span className="text-gray-500">0.8 km</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span>University</span>
+                          <span className="text-gray-500">5.2 km</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h3 className="font-semibold text-lg mb-3 flex items-center">
+                        <ShoppingBag className="h-5 w-5 mr-2 text-green-500" />
+                        Shopping
+                      </h3>
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span>Shopping Mall</span>
+                          <span className="text-gray-500">3.1 km</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span>Supermarket</span>
+                          <span className="text-gray-500">0.7 km</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span>Local Market</span>
+                          <span className="text-gray-500">0.3 km</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Transportation */}
+              <div className="transition-all duration-800 delay-700">
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                  Transportation
+                </h2>
+                <div className="bg-white border border-gray-200 rounded-2xl p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <h3 className="font-semibold text-lg mb-3 flex items-center">
+                        <Train className="h-5 w-5 mr-2 text-blue-600" />
+                        Public Transport
+                      </h3>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                          <div className="flex items-center">
+                            <Train className="h-4 w-4 mr-2 text-blue-600" />
+                            <span className="text-sm">Metro Station</span>
+                          </div>
+                          <span className="text-sm text-gray-500">1.5 km</span>
+                        </div>
+                        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                          <div className="flex items-center">
+                            <Bus className="h-4 w-4 mr-2 text-green-600" />
+                            <span className="text-sm">Bus Stop</span>
+                          </div>
+                          <span className="text-sm text-gray-500">0.2 km</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h3 className="font-semibold text-lg mb-3 flex items-center">
+                        <Car className="h-5 w-5 mr-2 text-gray-600" />
+                        Road Connectivity
+                      </h3>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                          <span className="text-sm">City Center</span>
+                          <span className="text-sm text-gray-500">15 min</span>
+                        </div>
+                        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                          <span className="text-sm">Airport</span>
+                          <span className="text-sm text-gray-500">45 min</span>
+                        </div>
+                        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                          <span className="text-sm">Highway</span>
+                          <span className="text-sm text-gray-500">5 min</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Price History & Market Trends */}
+              <div className="transition-all duration-800 delay-800">
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                  Price History & Market Trends
+                </h2>
+                <div className="bg-white border border-gray-200 rounded-2xl p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <h3 className="font-semibold text-lg mb-3 flex items-center">
+                        <LineChart className="h-5 w-5 mr-2 text-blue-600" />
+                        Price History
+                      </h3>
+                      <div className="bg-gray-50 rounded-lg h-48 flex items-center justify-center">
+                        <div className="text-center">
+                          <BarChart3 className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                          <p className="text-sm text-gray-500">
+                            Price trend chart
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h3 className="font-semibold text-lg mb-3 flex items-center">
+                        <TrendingUp className="h-5 w-5 mr-2 text-green-600" />
+                        Market Insights
+                      </h3>
+                      <div className="space-y-3">
+                        <div className="flex justify-between p-3 bg-green-50 rounded-lg">
+                          <span className="text-sm">Area Growth</span>
+                          <span className="text-sm font-semibold text-green-600">
+                            +12.5%
+                          </span>
+                        </div>
+                        <div className="flex justify-between p-3 bg-blue-50 rounded-lg">
+                          <span className="text-sm">Demand Index</span>
+                          <span className="text-sm font-semibold text-blue-600">
+                            High
+                          </span>
+                        </div>
+                        <div className="flex justify-between p-3 bg-purple-50 rounded-lg">
+                          <span className="text-sm">Investment Score</span>
+                          <span className="text-sm font-semibold text-purple-600">
+                            8.5/10
                           </span>
                         </div>
                       </div>
-                      
-                      <div className="flex items-center text-slate-600 mb-6 slide-in-left" style={{animationDelay: '0.1s'}}>
-                        <MapPin className="h-5 w-5 mr-2 text-blue-500" />
-                        <span className="font-semibold text-lg">{property.address}</span>
-                        <button className="ml-3 text-blue-500 hover:text-blue-700 transition-colors">
-                          <ExternalLink className="h-4 w-4" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Legal & Documentation */}
+              <div className="transition-all duration-800 delay-900">
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                  Legal & Documentation
+                </h2>
+                <div className="bg-white border border-gray-200 rounded-2xl p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <h3 className="font-semibold text-lg mb-3 flex items-center">
+                        <FileText className="h-5 w-5 mr-2 text-blue-600" />
+                        Property Documents
+                      </h3>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                          <span className="text-sm">Title Deed</span>
+                          <CheckCircle className="h-4 w-4 text-green-600" />
+                        </div>
+                        <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                          <span className="text-sm">Approved Plan</span>
+                          <CheckCircle className="h-4 w-4 text-green-600" />
+                        </div>
+                        <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                          <span className="text-sm">NOC</span>
+                          <CheckCircle className="h-4 w-4 text-green-600" />
+                        </div>
+                        <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                          <span className="text-sm">
+                            Completion Certificate
+                          </span>
+                          <CheckCircle className="h-4 w-4 text-green-600" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h3 className="font-semibold text-lg mb-3 flex items-center">
+                        <Shield className="h-5 w-5 mr-2 text-green-600" />
+                        Verification Status
+                      </h3>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                          <span className="text-sm">RERA Approved</span>
+                          <span className="text-xs bg-green-600 text-white px-2 py-1 rounded">
+                            Verified
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                          <span className="text-sm">Bank Loan Approved</span>
+                          <span className="text-xs bg-green-600 text-white px-2 py-1 rounded">
+                            Yes
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                          <span className="text-sm">Legal Verification</span>
+                          <span className="text-xs bg-blue-600 text-white px-2 py-1 rounded">
+                            Clear
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Virtual Tour & Media */}
+              <div className="transition-all duration-800 delay-1000">
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                  Virtual Tour & Media
+                </h2>
+                <div className="bg-white border border-gray-200 rounded-2xl p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="bg-gray-100 rounded-xl h-48 flex items-center justify-center">
+                      <div className="text-center">
+                        <Play className="h-12 w-12 text-blue-600 mx-auto mb-3" />
+                        <p className="font-semibold mb-2">360° Virtual Tour</p>
+                        <button className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition-colors">
+                          Start Tour
                         </button>
                       </div>
-                      
-                      <div className="flex items-baseline space-x-6 slide-in-left" style={{animationDelay: '0.2s'}}>
-                        <div className="text-5xl lg:text-6xl font-bold premium-gradient bg-clip-text text-transparent font-poppins">
-                          {formatPrice(property.price)}
-                        </div>
-                        <div className="text-slate-500">
-                          <div className="text-lg font-bold">
-                            ₹{property.area ? Math.floor(property.price / property.area).toLocaleString() : 'N/A'}/sq ft
-                          </div>
-                          <div className="text-sm">Market competitive</div>
-                        </div>
-                      </div>
                     </div>
-                    
-                    <div className="text-right slide-in-right">
-                      <div className="flex items-center justify-end space-x-6 text-sm text-slate-500 mb-4">
-                        <div className="flex items-center space-x-2 glass-morphism px-4 py-2 rounded-full shadow-sm">
-                          <Eye className="h-4 w-4 text-blue-500" />
-                          <span className="font-bold text-slate-700">{formatNumber(viewCount)}</span>
-                        </div>
-                        <div className="flex items-center space-x-2 glass-morphism px-4 py-2 rounded-full shadow-sm">
-                          <Star className="h-4 w-4 fill-current text-yellow-400" />
-                          <span className="font-bold text-slate-700">{propertyScore}</span>
-                        </div>
-                        <div className="flex items-center space-x-2 glass-morphism px-4 py-2 rounded-full shadow-sm">
-                          <Clock className="h-4 w-4 text-green-500" />
-                          <span className="font-bold text-slate-700">
-                            {property.created_at ? `${Math.round((new Date() - new Date(property.created_at)) / (1000 * 60 * 60 * 24))}d` : 'New'}
-                          </span>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center space-x-2 text-sm">
-                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                        <span className="text-green-600 font-bold">Recently updated</span>
-                      </div>
-                    </div>
-                  </div>
 
-                  {/* Enhanced Animated Metric Cards */}
-                  <div ref={metricsRef} className="grid grid-cols-2 md:grid-cols-4 gap-6 p-6 bg-white rounded-2xl luxury-shadow stagger-children">
-                    <div className="text-center group hover:scale-105 transition-transform duration-300 cursor-pointer">
-                      <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-3 group-hover:shadow-lg transition-all duration-300">
-                        <Bed className="h-8 w-8 text-white" />
-                      </div>
-                      <div className="text-3xl font-bold text-slate-900 mb-1 font-poppins">{property.bedrooms}</div>
-                      <div className="text-sm text-slate-600 font-semibold">Bedrooms</div>
-                    </div>
-                    <div className="text-center group hover:scale-105 transition-transform duration-300 cursor-pointer">
-                      <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-3 group-hover:shadow-lg transition-all duration-300">
-                        <Bath className="h-8 w-8 text-white" />
-                      </div>
-                      <div className="text-3xl font-bold text-slate-900 mb-1 font-poppins">{property.bathrooms}</div>
-                      <div className="text-sm text-slate-600 font-semibold">Bathrooms</div>
-                    </div>
-                    <div className="text-center group hover:scale-105 transition-transform duration-300 cursor-pointer">
-                      <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-green-600 rounded-2xl flex items-center justify-center mx-auto mb-3 group-hover:shadow-lg transition-all duration-300">
-                        <Square className="h-8 w-8 text-white" />
-                      </div>
-                      <div className="text-3xl font-bold text-slate-900 mb-1 font-poppins">{formatNumber(property.area)}</div>
-                      <div className="text-sm text-slate-600 font-semibold">Sq Ft</div>
-                    </div>
-                    <div className="text-center group hover:scale-105 transition-transform duration-300 cursor-pointer">
-                      <div className="w-16 h-16 bg-gradient-to-br from-orange-400 to-orange-600 rounded-2xl flex items-center justify-center mx-auto mb-3 group-hover:shadow-lg transition-all duration-300">
-                        <Car className="h-8 w-8 text-white" />
-                      </div>
-                      <div className="text-3xl font-bold text-slate-900 mb-1 font-poppins">{property.parking || 2}</div>
-                      <div className="text-sm text-slate-600 font-semibold">Parking</div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Enhanced Action Bar */}
-                <div className="glass-morphism rounded-2xl p-6 mt-6 mx-8 mb-8">
-                  <div className="flex flex-col lg:flex-row items-center justify-between space-y-4 lg:space-y-0">
-                    <div className="flex items-center space-x-4">
-                      <button
-                        onClick={handleFavoriteToggle}
-                        className={`flex items-center space-x-3 px-6 py-3 rounded-xl transition-all duration-300 font-semibold ${
-                          isFavorite 
-                            ? 'bg-red-100 text-red-600 hover:bg-red-200 scale-105' 
-                            : 'bg-white text-slate-600 hover:bg-red-50 hover:text-red-500'
-                        }`}
-                      >
-                        <Heart className={`h-5 w-5 ${isFavorite ? 'fill-current animate-pulse' : ''}`} />
-                        <span>{isFavorite ? 'Saved' : 'Save Property'}</span>
-                      </button>
-                      
-                      <button
-                        onClick={() => handleShare()}
-                        className="flex items-center space-x-3 px-6 py-3 bg-white text-slate-600 rounded-xl hover:bg-slate-100 transition-all duration-300 hover:scale-105 font-semibold"
-                      >
-                        <Share2 className="h-5 w-5" />
-                        <span>Share</span>
-                      </button>
-                      
-                      <button
-                        onClick={() => setShowMortgageCalculator(true)}
-                        className="flex items-center space-x-3 px-6 py-3 bg-blue-100 text-blue-600 rounded-xl hover:bg-blue-200 transition-all duration-300 hover:scale-105 font-semibold"
-                      >
-                        <Calculator className="h-5 w-5" />
-                        <span>EMI Calculator</span>
-                      </button>
-                      
-                      <button
-                        onClick={() => setShowPriceComparison(true)}
-                        className="flex items-center space-x-3 px-6 py-3 bg-green-100 text-green-600 rounded-xl hover:bg-green-200 transition-all duration-300 hover:scale-105 font-semibold"
-                      >
-                        <BarChart3 className="h-5 w-5" />
-                        <span>Compare Price</span>
-                      </button>
-                    </div>
-                    
-                    <div className="flex items-center space-x-4 text-sm text-slate-500">
-                      <div className="flex items-center space-x-2">
-                        <Eye className="h-4 w-4" />
-                        <span className="font-semibold">{formatNumber(viewCount)} views</span>
-                      </div>
-                      <div className="w-px h-4 bg-slate-300"></div>
-                      <div className="flex items-center space-x-2">
-                        <TrendingUp className="h-4 w-4 text-green-500" />
-                        <span className="text-green-600 font-semibold">+{marketTrends?.priceGrowth || 12.5}% this month</span>
+                    <div className="bg-gray-100 rounded-xl h-48 flex items-center justify-center">
+                      <div className="text-center">
+                        <Video className="h-12 w-12 text-purple-600 mx-auto mb-3" />
+                        <p className="font-semibold mb-2">Property Video</p>
+                        <button className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-purple-700 transition-colors">
+                          Watch Video
+                        </button>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>    
-          {/* Enhanced Tabbed Content */}
-              <div className="bg-white rounded-3xl luxury-shadow overflow-hidden">
-                {/* Tab Navigation */}
-                <div className="border-b border-slate-200">
-                  <nav className="flex space-x-8 px-8">
-                    {[
-                      { id: 'overview', label: 'Overview', icon: Home },
-                      { id: 'amenities', label: 'Amenities', icon: Star },
-                      { id: 'location', label: 'Location & Nearby', icon: MapPin },
-                      { id: 'pricing', label: 'Pricing & Market', icon: Calculator },
-                      { id: 'reviews', label: 'Reviews', icon: MessageSquare }
-                    ].map((tab) => (
-                      <button
-                        key={tab.id}
-                        onClick={() => setActiveTab(tab.id)}
-                        className={`flex items-center space-x-2 py-4 px-2 border-b-2 font-semibold text-sm transition-colors ${
-                          activeTab === tab.id
-                            ? 'border-blue-500 text-blue-600'
-                            : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
-                        }`}
-                      >
-                        <tab.icon className="h-4 w-4" />
-                        <span>{tab.label}</span>
-                      </button>
-                    ))}
-                  </nav>
-                </div>
+              </div>
+            </div>
 
-                {/* Tab Content */}
-                <div className="p-8">
-                  {activeTab === 'overview' && (
-                    <div className="space-y-8 fade-in">
-                      <div>
-                        <h2 className="text-2xl font-bold text-slate-900 mb-4 flex items-center space-x-2 font-poppins">
-                          <Info className="h-6 w-6 text-blue-500" />
-                          <span>Property Description</span>
-                        </h2>
-                        <div className="text-slate-700 leading-relaxed text-lg glass-morphism p-6 rounded-2xl">
-                          <p className={`${!showFullDescription ? 'line-clamp-4' : ''}`}>
-                            {property.description}
-                          </p>
-                          {property.description?.length > 200 && (
-                            <button
-                              onClick={() => setShowFullDescription(!showFullDescription)}
-                              className="text-blue-600 hover:text-blue-700 font-semibold mt-2 transition-colors"
-                            >
-                              {showFullDescription ? 'Show Less' : 'Read More'}
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                      
-                      {/* Property Highlights */}
-                      <div>
-                        <h3 className="text-xl font-bold text-slate-900 mb-4 font-poppins">Property Highlights</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="flex items-center space-x-3 p-4 bg-green-50 rounded-xl hover:bg-green-100 transition-colors">
-                            <CheckCircle className="h-6 w-6 text-green-500" />
-                            <span className="text-slate-700 font-semibold">Ready to move in</span>
-                          </div>
-                          <div className="flex items-center space-x-3 p-4 bg-blue-50 rounded-xl hover:bg-blue-100 transition-colors">
-                            <Shield className="h-6 w-6 text-blue-500" />
-                            <span className="text-slate-700 font-semibold">Gated community</span>
-                          </div>
-                          <div className="flex items-center space-x-3 p-4 bg-purple-50 rounded-xl hover:bg-purple-100 transition-colors">
-                            <Zap className="h-6 w-6 text-purple-500" />
-                            <span className="text-slate-700 font-semibold">Power backup</span>
-                          </div>
-                          <div className="flex items-center space-x-3 p-4 bg-orange-50 rounded-xl hover:bg-orange-100 transition-colors">
-                            <TreePine className="h-6 w-6 text-orange-500" />
-                            <span className="text-slate-700 font-semibold">Garden view</span>
-                          </div>
-                        </div>
-                      </div>
+            {/* Sidebar */}
+            <div className="space-y-6">
+              {/* Contact Card */}
+              <div
+                className={`transition-all duration-800 delay-400 ${
+                  animationTrigger ? "slide-in-right" : "opacity-0"
+                }`}
+              >
+                <div className="bg-white border border-gray-200 rounded-2xl p-6 hover-lift">
+                  <h3 className="text-xl font-bold text-gray-900 mb-4">
+                    Contact Agent
+                  </h3>
 
-                      {/* Property Performance Analytics */}
-                      {isPropertyOwner && propertyAnalytics && (
-                        <div>
-                          <h3 className="text-xl font-bold text-slate-900 mb-4 font-poppins">Property Performance</h3>
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div className="glass-morphism p-4 rounded-xl text-center">
-                              <div className="text-2xl font-bold text-blue-600 mb-1">{propertyAnalytics.weekly_views || 0}</div>
-                              <div className="text-sm text-slate-600">Views This Week</div>
-                            </div>
-                            <div className="glass-morphism p-4 rounded-xl text-center">
-                              <div className="text-2xl font-bold text-green-600 mb-1">{propertyAnalytics.inquiries || 0}</div>
-                              <div className="text-sm text-slate-600">Inquiries Received</div>
-                            </div>
-                            <div className="glass-morphism p-4 rounded-xl text-center">
-                              <div className="text-2xl font-bold text-purple-600 mb-1">{propertyAnalytics.interest_score || 'N/A'}</div>
-                              <div className="text-sm text-slate-600">Interest Score</div>
-                            </div>
-                          </div>
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
+                      {propertyOwner?.photo_url ? (
+                        <img
+                          src={propertyOwner.photo_url}
+                          alt="Owner"
+                          className="w-12 h-12 rounded-full object-cover"
+                        />
+                      ) : (
+                        <User className="h-6 w-6 text-gray-600" />
+                      )}
+                    </div>
+                    <div>
+                      <div className="font-semibold text-gray-900">
+                        {propertyOwner?.name ||
+                          propertyOwner?.full_name ||
+                          "Property Owner"}
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        {propertyOwner?.email || "Contact via form"}
+                      </div>
+                      {propertyOwner?.user_type && (
+                        <div className="text-xs text-blue-600 capitalize">
+                          {propertyOwner.user_type}
                         </div>
                       )}
                     </div>
-                  )}
+                  </div>
 
-                  {activeTab === 'amenities' && (
-                    <div className="fade-in">
-                      <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center space-x-2 font-poppins">
-                        <Star className="h-6 w-6 text-yellow-500" />
-                        <span>Amenities & Features</span>
-                      </h2>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {[
-                          { name: 'Swimming Pool', icon: Waves, color: 'blue' },
-                          { name: 'Gymnasium', icon: Dumbbell, color: 'red' },
-                          { name: 'Wi-Fi', icon: Wifi, color: 'green' },
-                          { name: 'Security', icon: Shield, color: 'purple' },
-                          { name: 'Garden', icon: TreePine, color: 'green' },
-                          { name: 'Clubhouse', icon: Building, color: 'orange' },
-                          { name: 'Kitchen', icon: Utensils, color: 'yellow' },
-                          { name: 'Entertainment', icon: Tv, color: 'indigo' },
-                          { name: 'Air Conditioning', icon: Wind, color: 'cyan' },
-                          ...(property.amenities?.map(amenity => ({ name: amenity, icon: CheckCircle, color: 'slate' })) || [])
-                        ].map((amenity, index) => (
-                          <div 
-                            key={index} 
-                            className={`flex items-center space-x-3 p-4 bg-${amenity.color}-50 rounded-xl hover:scale-105 transition-all duration-300 hover:shadow-md group cursor-pointer`}
-                          >
-                            <div className={`w-10 h-10 bg-${amenity.color}-100 rounded-lg flex items-center justify-center group-hover:bg-${amenity.color}-200 transition-colors`}>
-                              <amenity.icon className={`h-5 w-5 text-${amenity.color}-600`} />
-                            </div>
-                            <span className="text-slate-700 font-semibold">{amenity.name}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                  <div className="space-y-3">
+                    <button
+                      onClick={() => setShowContactModal(true)}
+                      className="w-full interactive-button bg-blue-600 text-white py-3 px-4 rounded-xl font-semibold hover:bg-blue-700 transition-all duration-300 flex items-center justify-center gap-2"
+                    >
+                      <MessageSquare className="h-5 w-5" />
+                      Send Message
+                    </button>
 
-                  {activeTab === 'location' && (
-                    <div className="fade-in">
-                      <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center space-x-2 font-poppins">
-                        <MapPin className="h-6 w-6 text-red-500" />
-                        <span>Location & Neighborhood</span>
-                      </h2>
-                      
-                      <div className="space-y-6">
-                        {/* Map Placeholder */}
-                        <div className="h-64 glass-morphism rounded-2xl flex items-center justify-center cursor-pointer hover:bg-slate-100 transition-colors"
-                             onClick={() => setShowNearbyMap(true)}>
-                          <div className="text-center">
-                            <MapPin className="h-12 w-12 text-slate-400 mx-auto mb-2" />
-                            <p className="text-slate-500 font-semibold">Click to view interactive map</p>
-                            <p className="text-slate-400 text-sm">Explore nearby places and amenities</p>
-                          </div>
-                        </div>
-                        
-                        {/* Nearby Places */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          {Object.entries(nearbyPlaces).map(([category, places]) => (
-                            <div key={category}>
-                              <h3 className="text-lg font-bold text-slate-900 mb-4 capitalize font-poppins">
-                                Nearby {category}
-                              </h3>
-                              <div className="space-y-3">
-                                {places.map((place, index) => (
-                                  <div key={index} className="flex items-center justify-between p-3 glass-morphism rounded-lg hover:bg-white transition-colors">
-                                    <div className="flex items-center space-x-3">
-                                      <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                                        {category === 'schools' && <GraduationCap className="h-4 w-4 text-blue-500" />}
-                                        {category === 'hospitals' && <Hospital className="h-4 w-4 text-red-500" />}
-                                        {category === 'markets' && <ShoppingBag className="h-4 w-4 text-green-500" />}
-                                        {category === 'transport' && <Train className="h-4 w-4 text-purple-500" />}
-                                        {category === 'entertainment' && <Film className="h-4 w-4 text-orange-500" />}
-                                      </div>
-                                      <div>
-                                        <div className="font-semibold text-slate-900">{place.name}</div>
-                                        <div className="text-sm text-slate-500">{place.distance}</div>
-                                      </div>
-                                    </div>
-                                    <div className="flex items-center space-x-1">
-                                      <Star className="h-4 w-4 fill-current text-yellow-400" />
-                                      <span className="text-sm font-semibold">{place.rating}</span>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                    <button
+                      onClick={() => setShowScheduleModal(true)}
+                      className="w-full interactive-button bg-gray-100 text-gray-900 py-3 px-4 rounded-xl font-semibold hover:bg-gray-200 transition-all duration-300 flex items-center justify-center gap-2"
+                    >
+                      <Calendar className="h-5 w-5" />
+                      Schedule Visit
+                    </button>
 
-                  {activeTab === 'pricing' && (
-                    <div className="fade-in">
-                      <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center space-x-2 font-poppins">
-                        <Calculator className="h-6 w-6 text-green-500" />
-                        <span>Pricing & Market Analysis</span>
-                      </h2>
-                      
-                      <div className="space-y-6">
-                        {/* Price Breakdown */}
-                        <div className="glass-morphism p-6 rounded-2xl">
-                          <h3 className="text-lg font-bold text-slate-900 mb-4">Price Breakdown</h3>
-                          <div className="space-y-3">
-                            <div className="flex justify-between items-center">
-                              <span className="text-slate-600">Base Price</span>
-                              <span className="font-bold text-slate-900">{formatPrice(property.price)}</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                              <span className="text-slate-600">Price per sq ft</span>
-                              <span className="font-bold text-slate-900">
-                                ₹{property.area ? Math.floor(property.price / property.area).toLocaleString() : 'N/A'}
-                              </span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                              <span className="text-slate-600">Registration & Stamp Duty (est.)</span>
-                              <span className="font-bold text-slate-900">{formatPrice(property.price * 0.07)}</span>
-                            </div>
-                            <div className="border-t pt-3 flex justify-between items-center">
-                              <span className="text-slate-900 font-bold">Total Cost (est.)</span>
-                              <span className="font-bold text-blue-600 text-lg">{formatPrice(property.price * 1.07)}</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Market Comparison */}
-                        <div className="glass-morphism p-6 rounded-2xl">
-                          <h3 className="text-lg font-bold text-slate-900 mb-4">Market Comparison</h3>
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div className="text-center p-4 bg-green-50 rounded-xl">
-                              <div className="text-2xl font-bold text-green-600 mb-1">
-                                {formatPrice(marketTrends?.averagePrice || 0)}
-                              </div>
-                              <div className="text-sm text-slate-600">Area Average</div>
-                            </div>
-                            <div className="text-center p-4 bg-blue-50 rounded-xl">
-                              <div className="text-2xl font-bold text-blue-600 mb-1">
-                                +{marketTrends?.priceGrowth || 12.5}%
-                              </div>
-                              <div className="text-sm text-slate-600">YoY Growth</div>
-                            </div>
-                            <div className="text-center p-4 bg-purple-50 rounded-xl">
-                              <div className="text-2xl font-bold text-purple-600 mb-1">
-                                ₹{marketTrends?.pricePerSqft || 0}
-                              </div>
-                              <div className="text-sm text-slate-600">Avg Price/sq ft</div>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Price History Chart Placeholder */}
-                        {priceHistory.length > 0 && (
-                          <div className="glass-morphism p-6 rounded-2xl">
-                            <h3 className="text-lg font-bold text-slate-900 mb-4">Price History</h3>
-                            <div className="h-48 bg-slate-100 rounded-xl flex items-center justify-center">
-                              <div className="text-center">
-                                <LineChart className="h-12 w-12 text-slate-400 mx-auto mb-2" />
-                                <p className="text-slate-500">Price trend chart coming soon</p>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {activeTab === 'reviews' && (
-                    <div className="fade-in">
-                      <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-2xl font-bold text-slate-900 flex items-center space-x-2 font-poppins">
-                          <MessageSquare className="h-6 w-6 text-blue-500" />
-                          <span>Reviews & Testimonials</span>
-                        </h2>
-                        <button
-                          onClick={() => setShowReviewModal(true)}
-                          className="px-4 py-2 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors"
-                        >
-                          Write Review
-                        </button>
-                      </div>
-                      
-                      {/* Rating Summary */}
-                      <div className="glass-morphism p-6 rounded-2xl mb-6">
-                        <div className="flex items-center space-x-4">
-                          <div className="text-4xl font-bold text-slate-900">{averageRating}</div>
-                          <div>
-                            <div className="flex items-center space-x-1 mb-1">
-                              {[...Array(5)].map((_, i) => (
-                                <Star key={i} className={`h-5 w-5 ${i < Math.floor(averageRating) ? 'fill-current text-yellow-400' : 'text-slate-300'}`} />
-                              ))}
-                            </div>
-                            <div className="text-sm text-slate-600">{reviews.length} reviews</div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Reviews List */}
-                      <div className="space-y-4">
-                        {reviews.map((review) => (
-                          <div key={review.id} className="glass-morphism p-6 rounded-2xl">
-                            <div className="flex items-start justify-between mb-3">
-                              <div className="flex items-center space-x-3">
-                                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                                  <User className="h-5 w-5 text-blue-600" />
-                                </div>
-                                <div>
-                                  <div className="font-semibold text-slate-900">{review.user}</div>
-                                  <div className="text-sm text-slate-500">{review.date}</div>
-                                </div>
-                                {review.verified && (
-                                  <div className="bg-green-100 text-green-600 px-2 py-1 rounded-full text-xs font-semibold">
-                                    Verified
-                                  </div>
-                                )}
-                              </div>
-                              <div className="flex items-center space-x-1">
-                                {[...Array(5)].map((_, i) => (
-                                  <Star key={i} className={`h-4 w-4 ${i < review.rating ? 'fill-current text-yellow-400' : 'text-slate-300'}`} />
-                                ))}
-                              </div>
-                            </div>
-                            <p className="text-slate-700">{review.comment}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                    <button
+                      onClick={() => setShowMortgageCalculator(true)}
+                      className="w-full interactive-button bg-green-100 text-green-900 py-3 px-4 rounded-xl font-semibold hover:bg-green-200 transition-all duration-300 flex items-center justify-center gap-2"
+                    >
+                      <Calculator className="h-5 w-5" />
+                      Mortgage Calculator
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Right Column - Enhanced Sidebar */}
-            <div className="lg:col-span-1 space-y-6">
-              
-              {/* Premium Contact Card */}
-              <div className="glass-morphism rounded-3xl p-6 luxury-shadow">
-                <div className="text-center mb-6">
-                  <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                    {propertyOwner?.profile_picture ? (
-                      <img 
-                        src={propertyOwner.profile_picture} 
-                        alt={propertyOwner.name}
-                        className="w-full h-full rounded-full object-cover"
-                      />
-                    ) : (
-                      <User className="h-10 w-10 text-white" />
+              {/* Property Stats */}
+              <div
+                className={`transition-all duration-800 delay-500 ${
+                  animationTrigger ? "slide-in-right" : "opacity-0"
+                }`}
+              >
+                <div className="bg-white border border-gray-200 rounded-2xl p-6 hover-lift">
+                  <h3 className="text-xl font-bold text-gray-900 mb-4">
+                    Property Stats
+                  </h3>
+
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">Total views</span>
+                      <span className="font-semibold text-gray-900">
+                        {viewCount || 0}
+                      </span>
+                    </div>
+
+                    {propertyViews && propertyViews.length > 0 && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Recent activity</span>
+                        <span className="font-semibold text-green-600">
+                          {propertyViews.length} recent views
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">Price per sq ft</span>
+                      <span className="font-semibold text-gray-900">
+                        {property.area
+                          ? `₹${Math.round(property.price / property.area)}`
+                          : "N/A"}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">Listed on</span>
+                      <span className="font-semibold text-gray-900">
+                        {property.created_at
+                          ? new Date(property.created_at).toLocaleDateString()
+                          : "N/A"}
+                      </span>
+                    </div>
+
+                    {viewGrowth > 0 && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Interest growth</span>
+                        <span className="font-semibold text-green-600">
+                          +{viewGrowth}%
+                        </span>
+                      </div>
                     )}
                   </div>
-                  <h3 className="text-xl font-bold text-slate-900 mb-1 font-poppins">
-                    {propertyOwner?.name || 'Property Owner'}
+                </div>
+              </div>
+
+              {/* EMI Calculator */}
+              <div className="transition-all duration-800 delay-500">
+                <div className="bg-white border border-gray-200 rounded-2xl p-6 hover-lift">
+                  <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
+                    <Calculator className="h-5 w-5 mr-2 text-green-600" />
+                    EMI Calculator
                   </h3>
-                  <p className="text-slate-600">{propertyOwner?.company || 'Real Estate Professional'}</p>
-                  <div className="flex items-center justify-center space-x-1 mt-2">
-                    <Star className="h-4 w-4 fill-current text-yellow-400" />
-                    <span className="text-sm font-semibold">4.8 (127 reviews)</span>
-                  </div>
-                </div>
 
-                <div className="space-y-3">
-                  <button
-                    onClick={() => setShowContactModal(true)}
-                    className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 px-4 rounded-xl font-bold hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 flex items-center justify-center space-x-2 hover:shadow-lg"
-                  >
-                    <MessageSquare className="h-5 w-5" />
-                    <span>Send Message</span>
-                  </button>
-                  
-                  <button
-                    onClick={() => setShowScheduleModal(true)}
-                    className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white py-3 px-4 rounded-xl font-bold hover:from-green-600 hover:to-emerald-600 transition-all duration-300 flex items-center justify-center space-x-2 hover:shadow-lg"
-                  >
-                    <Calendar className="h-5 w-5" />
-                    <span>Schedule Visit</span>
-                  </button>
-                  
-                  <button
-                    onClick={() => window.open(`tel:${propertyOwner?.phone || '+91-9876543210'}`)}
-                    className="w-full bg-white border-2 border-slate-200 text-slate-700 py-3 px-4 rounded-xl font-bold hover:border-slate-300 hover:bg-slate-50 transition-all duration-300 flex items-center justify-center space-x-2"
-                  >
-                    <Phone className="h-5 w-5" />
-                    <span>Call Now</span>
-                  </button>
-                </div>
-
-                <div className="mt-6 pt-6 border-t border-slate-200">
-                  <div className="text-sm text-slate-600 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span>Response Time</span>
-                      <span className="font-semibold text-green-600">Within 2 hours</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span>Languages</span>
-                      <span className="font-semibold">English, Hindi</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Enhanced Premium CTAs */}
-              <div className="glass-morphism rounded-3xl p-6 luxury-shadow">
-                <h3 className="text-lg font-bold text-slate-900 mb-4 font-poppins">Quick Actions</h3>
-                <div className="space-y-3">
-                  <button
-                    onClick={() => setShowVirtualTour(true)}
-                    className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-3 px-4 rounded-xl font-bold hover:from-purple-600 hover:to-pink-600 transition-all duration-300 flex items-center justify-center space-x-2 hover:shadow-lg"
-                  >
-                    <Play className="h-5 w-5" />
-                    <span>Book Virtual Tour</span>
-                  </button>
-                  
-                  <button
-                    onClick={() => alert('Callback feature coming soon!')}
-                    className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white py-3 px-4 rounded-xl font-bold hover:from-orange-600 hover:to-red-600 transition-all duration-300 flex items-center justify-center space-x-2 hover:shadow-lg"
-                  >
-                    <Phone className="h-5 w-5" />
-                    <span>Request Callback</span>
-                  </button>
-                  
-                  <button
-                    onClick={() => setShowDocuments(true)}
-                    className="w-full bg-gradient-to-r from-teal-500 to-cyan-500 text-white py-3 px-4 rounded-xl font-bold hover:from-teal-600 hover:to-cyan-600 transition-all duration-300 flex items-center justify-center space-x-2 hover:shadow-lg"
-                  >
-                    <Download className="h-5 w-5" />
-                    <span>Download Brochure</span>
-                  </button>
-                  
-                  <button
-                    onClick={() => setShowPriceComparison(true)}
-                    className="w-full bg-white border-2 border-slate-200 text-slate-700 py-3 px-4 rounded-xl font-bold hover:border-slate-300 hover:bg-slate-50 transition-all duration-300 flex items-center justify-center space-x-2"
-                  >
-                    <BarChart3 className="h-5 w-5" />
-                    <span>Compare Properties</span>
-                  </button>
-                  
-                  <button
-                    onClick={() => alert('Make an offer feature coming soon!')}
-                    className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 text-white py-3 px-4 rounded-xl font-bold hover:from-yellow-600 hover:to-orange-600 transition-all duration-300 flex items-center justify-center space-x-2 hover:shadow-lg"
-                  >
-                    <DollarSign className="h-5 w-5" />
-                    <span>Make an Offer</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Real-time Availability Status */}
-              <div className="glass-morphism rounded-3xl p-6 luxury-shadow">
-                <h3 className="text-lg font-bold text-slate-900 mb-4 font-poppins">Availability Status</h3>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-3 bg-green-50 rounded-xl">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                      <span className="font-semibold text-green-700">Available</span>
-                    </div>
-                    <CheckCircle className="h-5 w-5 text-green-500" />
-                  </div>
-                  
-                  <div className="text-sm text-slate-600 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span>Possession</span>
-                      <span className="font-semibold">Immediate</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span>Last Updated</span>
-                      <span className="font-semibold">2 hours ago</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Location Map */}
-              <div className="glass-morphism rounded-3xl p-6 luxury-shadow">
-                <h3 className="text-lg font-bold text-slate-900 mb-4 font-poppins">Location</h3>
-                <div className="h-48 bg-slate-100 rounded-2xl flex items-center justify-center mb-4 cursor-pointer hover:bg-slate-200 transition-colors"
-                     onClick={() => setShowNearbyMap(true)}>
-                  <div className="text-center">
-                    <MapPin className="h-8 w-8 mx-auto mb-2 text-slate-400" />
-                    <p className="text-sm text-slate-500 font-semibold">Interactive map</p>
-                    <p className="text-xs text-slate-400">Click to explore</p>
-                  </div>
-                </div>
-                <div className="text-sm text-slate-600">
-                  <div className="flex items-start">
-                    <MapPin className="h-4 w-4 mr-2 mt-0.5 text-blue-600" />
+                  <div className="space-y-4">
                     <div>
-                      <p className="font-semibold">{property.address}</p>
-                      <p>{[property.city, property.state].filter(Boolean).join(', ')}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Recent Activity */}
-              {propertyViews && propertyViews.length > 0 && (
-                <div className="glass-morphism rounded-3xl p-6 luxury-shadow">
-                  <h3 className="text-lg font-bold text-slate-900 mb-4 font-poppins">Recent Activity</h3>
-                  <div className="space-y-3">
-                    {propertyViews.slice(0, 5).map((view, index) => (
-                      <div key={index} className="flex items-center text-sm">
-                        <Eye className="h-4 w-4 text-slate-400 mr-2" />
-                        <span className="text-slate-600">
-                          Viewed {Math.floor((Date.now() - new Date(view.created_at)) / (1000 * 60 * 60 * 24))} days ago
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Social Sharing */}
-              <div className="glass-morphism rounded-3xl p-6 luxury-shadow">
-                <h3 className="text-lg font-bold text-slate-900 mb-4 font-poppins">Share Property</h3>
-                <div className="grid grid-cols-4 gap-3">
-                  <button
-                    onClick={() => handleSocialShare('facebook')}
-                    className="p-3 bg-blue-100 text-blue-600 rounded-xl hover:bg-blue-200 transition-colors flex items-center justify-center"
-                  >
-                    <Globe className="h-5 w-5" />
-                  </button>
-                  <button
-                    onClick={() => handleSocialShare('twitter')}
-                    className="p-3 bg-sky-100 text-sky-600 rounded-xl hover:bg-sky-200 transition-colors flex items-center justify-center"
-                  >
-                    <MessageCircle className="h-5 w-5" />
-                  </button>
-                  <button
-                    onClick={() => handleSocialShare('whatsapp')}
-                    className="p-3 bg-green-100 text-green-600 rounded-xl hover:bg-green-200 transition-colors flex items-center justify-center"
-                  >
-                    <MessageSquare className="h-5 w-5" />
-                  </button>
-                  <button
-                    onClick={() => handleSocialShare('email')}
-                    className="p-3 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition-colors flex items-center justify-center"
-                  >
-                    <Mail className="h-5 w-5" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>       
-   {/* Enhanced Nearby Properties Section */}
-          <div className="mt-16">
-            <div className="text-center mb-12">
-              <h2 className="text-4xl lg:text-5xl font-bold text-slate-900 mb-4 font-poppins">
-                Properties in Your Price Range
-              </h2>
-              <p className="text-xl text-slate-600 max-w-2xl mx-auto">
-                Discover similar properties in {property?.city} within your budget
-              </p>
-              <div className="flex items-center justify-center mt-8 space-x-8">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600 font-poppins">
-                    {formatPrice(marketTrends?.averagePrice || 0)}
-                  </div>
-                  <div className="text-sm text-slate-500 font-semibold">Average Price</div>
-                </div>
-                <div className="w-px h-12 bg-slate-200"></div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600 font-poppins">
-                    +{marketTrends?.priceGrowth || 12.5}%
-                  </div>
-                  <div className="text-sm text-slate-500 font-semibold">Price Growth</div>
-                </div>
-                <div className="w-px h-12 bg-slate-200"></div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-purple-600 font-poppins">
-                    {nearbyProperties.length}
-                  </div>
-                  <div className="text-sm text-slate-500 font-semibold">Similar Properties</div>
-                </div>
-              </div>
-            </div>
-
-            {loadingNearby ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {[...Array(6)].map((_, index) => (
-                  <div key={index} className="glass-morphism rounded-2xl shadow-lg overflow-hidden animate-pulse">
-                    <div className="h-64 bg-slate-200"></div>
-                    <div className="p-6 space-y-4">
-                      <div className="h-4 bg-slate-200 rounded w-3/4"></div>
-                      <div className="h-4 bg-slate-200 rounded w-1/2"></div>
-                      <div className="h-6 bg-slate-200 rounded w-1/3"></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : nearbyProperties.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {nearbyProperties.map((nearbyProperty, index) => (
-                  <div 
-                    key={nearbyProperty.id} 
-                    className="group glass-morphism rounded-2xl luxury-shadow hover:shadow-2xl transition-all duration-500 overflow-hidden hover:-translate-y-2 morphing-card"
-                    style={{ animationDelay: `${index * 0.1}s` }}
-                  >
-                    <div className="relative h-64 overflow-hidden">
-                      <img
-                        src={nearbyProperty.images?.[0] || 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop'}
-                        alt={nearbyProperty.title}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Loan Amount
+                      </label>
+                      <input
+                        type="number"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder={`₹${Math.round(
+                          property.price * 0.8
+                        ).toLocaleString()}`}
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                      
-                      {/* Property Status Badge */}
-                      <div className="absolute top-4 left-4">
-                        <span className="bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold">
-                          Available
-                        </span>
-                      </div>
-                      
-                      {/* Price Badge */}
-                      <div className="absolute top-4 right-4 glass-morphism px-3 py-2 rounded-full">
-                        <span className="text-lg font-bold text-slate-900">
-                          {formatPrice(nearbyProperty.price)}
-                        </span>
-                      </div>
-                      
-                      {/* Quick Actions */}
-                      <div className="absolute bottom-4 right-4 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        <button className="w-10 h-10 glass-morphism rounded-full flex items-center justify-center hover:bg-white transition-colors">
-                          <Heart className="h-5 w-5 text-slate-600" />
-                        </button>
-                        <button className="w-10 h-10 glass-morphism rounded-full flex items-center justify-center hover:bg-white transition-colors">
-                          <Share2 className="h-5 w-5 text-slate-600" />
-                        </button>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Interest Rate (%)
+                      </label>
+                      <input
+                        type="number"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="8.5"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Loan Tenure (Years)
+                      </label>
+                      <input
+                        type="number"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="20"
+                      />
+                    </div>
+
+                    <div className="bg-blue-50 rounded-lg p-4">
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-blue-600">
+                          ₹45,678
+                        </div>
+                        <div className="text-sm text-gray-600">Monthly EMI</div>
                       </div>
                     </div>
-                    
-                    <div className="p-6">
-                      <div className="mb-4">
-                        <h3 className="text-xl font-bold text-slate-900 mb-2 group-hover:text-blue-600 transition-colors font-poppins">
-                          {nearbyProperty.title}
-                        </h3>
-                        <div className="flex items-center text-slate-600 mb-3">
-                          <MapPin className="h-4 w-4 mr-1 text-blue-500" />
-                          <span className="text-sm">{nearbyProperty.address}</span>
+
+                    <button className="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors duration-200">
+                      Calculate EMI
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Investment Analysis */}
+              <div className="transition-all duration-800 delay-600">
+                <div className="bg-white border border-gray-200 rounded-2xl p-6 hover-lift">
+                  <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
+                    <TrendingUp className="h-5 w-5 mr-2 text-purple-600" />
+                    Investment Analysis
+                  </h3>
+
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">
+                        Expected Appreciation
+                      </span>
+                      <span className="font-semibold text-green-600">
+                        +8-12% annually
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">Rental Yield</span>
+                      <span className="font-semibold text-blue-600">
+                        3.2% annually
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">Investment Score</span>
+                      <div className="flex items-center">
+                        <div className="flex">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star
+                              key={star}
+                              className="h-4 w-4 text-yellow-400 fill-current"
+                            />
+                          ))}
                         </div>
-                      </div>
-                      
-                      {/* Property Features */}
-                      <div className="flex items-center justify-between mb-4 text-sm text-slate-600">
-                        <div className="flex items-center space-x-4">
-                          <div className="flex items-center">
-                            <Bed className="h-4 w-4 mr-1" />
-                            <span>{nearbyProperty.bedrooms}</span>
-                          </div>
-                          <div className="flex items-center">
-                            <Bath className="h-4 w-4 mr-1" />
-                            <span>{nearbyProperty.bathrooms}</span>
-                          </div>
-                          <div className="flex items-center">
-                            <Square className="h-4 w-4 mr-1" />
-                            <span>{formatNumber(nearbyProperty.area)}</span>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Price per sqft */}
-                      <div className="flex items-center justify-between mb-4">
-                        <span className="text-sm text-slate-500">
-                          ₹{nearbyProperty.area ? Math.floor(nearbyProperty.price / nearbyProperty.area).toLocaleString() : 'N/A'}/sq ft
+                        <span className="ml-2 text-sm text-gray-600">
+                          4.5/5
                         </span>
-                        <div className="flex items-center text-sm text-green-600">
-                          <TrendingUp className="h-4 w-4 mr-1" />
-                          <span>Good Value</span>
+                      </div>
+                    </div>
+
+                    <div className="bg-purple-50 rounded-lg p-4">
+                      <div className="text-center">
+                        <div className="text-lg font-bold text-purple-600">
+                          Excellent Investment
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          High growth potential area
                         </div>
                       </div>
-                      
-                      {/* Action Button */}
-                      <Link
-                        to={`/property/${nearbyProperty.id}`}
-                        className="block w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-center py-3 rounded-xl font-bold hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 hover:shadow-lg transform hover:scale-105"
-                      >
-                        View Details
-                      </Link>
                     </div>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-16">
-                <div className="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <Home className="h-12 w-12 text-slate-400" />
                 </div>
-                <h3 className="text-2xl font-bold text-slate-900 mb-4 font-poppins">
-                  No Similar Properties Found
-                </h3>
-                <p className="text-slate-600 mb-8 max-w-md mx-auto">
-                  We couldn't find properties in your price range in this area. Try expanding your search criteria.
-                </p>
-                <Link
-                  to="/properties"
-                  className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-colors"
-                >
-                  <Search className="h-5 w-5 mr-2" />
-                  Browse All Properties
-                </Link>
+              </div>
+
+              {/* Safety & Security */}
+              <div className="transition-all duration-800 delay-700">
+                <div className="bg-white border border-gray-200 rounded-2xl p-6 hover-lift">
+                  <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
+                    <Shield className="h-5 w-5 mr-2 text-green-600" />
+                    Safety & Security
+                  </h3>
+
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                        <span className="text-sm">24/7 Security</span>
+                      </div>
+                      <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                        Available
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                        <span className="text-sm">CCTV Surveillance</span>
+                      </div>
+                      <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                        Available
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                        <span className="text-sm">Fire Safety</span>
+                      </div>
+                      <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                        Certified
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                        <span className="text-sm">Gated Community</span>
+                      </div>
+                      <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                        Yes
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick Actions */}
+              <div className="transition-all duration-800 delay-800">
+                <div className="bg-white border border-gray-200 rounded-2xl p-6 hover-lift">
+                  <h3 className="text-xl font-bold text-gray-900 mb-4">
+                    Quick Actions
+                  </h3>
+
+                  <div className="space-y-3">
+                    <button className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors duration-200">
+                      <Download className="h-4 w-4" />
+                      Download Brochure
+                    </button>
+
+                    <button className="w-full flex items-center justify-center gap-2 bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors duration-200">
+                      <Phone className="h-4 w-4" />
+                      Request Callback
+                    </button>
+
+                    <button className="w-full flex items-center justify-center gap-2 bg-purple-600 text-white py-3 px-4 rounded-lg hover:bg-purple-700 transition-colors duration-200">
+                      <Share className="h-4 w-4" />
+                      Share Property
+                    </button>
+
+                    <button className="w-full flex items-center justify-center gap-2 border border-gray-300 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-50 transition-colors duration-200">
+                      <Bookmark className="h-4 w-4" />
+                      Save to Wishlist
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          {/* Enhanced Similar Properties with Multiple Categories */}
+          <div className="mt-16 space-y-16">
+            {/* Properties in Similar Price Range */}
+            {priceRangeProperties.length > 0 && (
+              <div
+                className={`transition-all duration-800 delay-600 ${
+                  animationTrigger ? "slide-in-up" : "opacity-0"
+                }`}
+              >
+                <div className="flex items-center justify-between mb-8">
+                  <h2 className="text-3xl font-bold text-gray-900">
+                    Properties in Similar Price Range
+                  </h2>
+                  <div className="text-sm text-gray-500 bg-blue-50 px-3 py-1 rounded-full">
+                    ₹{formatPrice(property.price * 0.8)} - ₹
+                    {formatPrice(property.price * 1.2)}
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {priceRangeProperties.slice(0, 6).map((similarProperty) => (
+                    <Link
+                      key={similarProperty.id}
+                      to={`/property/${similarProperty.id}`}
+                      className="group hover-lift"
+                    >
+                      <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300">
+                        <div className="aspect-video overflow-hidden relative">
+                          <img
+                            src={
+                              similarProperty.images?.[0] ||
+                              "/placeholder-property.jpg"
+                            }
+                            alt={similarProperty.title}
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                          />
+                          <div className="absolute top-3 left-3">
+                            <span className="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
+                              Similar Price
+                            </span>
+                          </div>
+                        </div>
+                        <div className="p-6">
+                          <h3 className="font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors duration-200 line-clamp-1">
+                            {similarProperty.title}
+                          </h3>
+                          <p className="text-gray-600 text-sm mb-3 flex items-center">
+                            <MapPin className="h-4 w-4 mr-1" />
+                            {similarProperty.address}
+                          </p>
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="text-xl font-bold gradient-text">
+                              {formatPrice(similarProperty.price)}
+                            </div>
+                            <div className="flex items-center gap-2 text-xs text-gray-500">
+                              <span>{similarProperty.bedrooms}BR</span>
+                              <span>{similarProperty.area} sq ft</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                              {similarProperty.property_type}
+                            </span>
+                            <div className="flex items-center gap-1">
+                              <Eye className="h-3 w-3 text-gray-400" />
+                              <span className="text-xs text-gray-500">
+                                {similarProperty.views || 0}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
               </div>
             )}
-            
-            {/* Market Insights */}
-            {nearbyProperties.length > 0 && (
-              <div className="mt-16 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-3xl p-8 luxury-shadow">
-                <div className="text-center mb-8">
-                  <h3 className="text-3xl font-bold text-slate-900 mb-4 font-poppins">
-                    Market Insights for {property?.city}
-                  </h3>
-                  <p className="text-lg text-slate-600">
-                    Based on recent property data in your area
+
+            {/* Properties in Same Location */}
+            {locationBasedProperties.length > 0 && (
+              <div
+                className={`transition-all duration-800 delay-700 ${
+                  animationTrigger ? "slide-in-up" : "opacity-0"
+                }`}
+              >
+                <div className="flex items-center justify-between mb-8">
+                  <h2 className="text-3xl font-bold text-gray-900">
+                    Properties in Same Area
+                  </h2>
+                  <div className="text-sm text-gray-500 bg-purple-50 px-3 py-1 rounded-full">
+                    {property.city} • {property.locality}
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {locationBasedProperties
+                    .slice(0, 6)
+                    .map((similarProperty) => (
+                      <Link
+                        key={similarProperty.id}
+                        to={`/property/${similarProperty.id}`}
+                        className="group hover-lift"
+                      >
+                        <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300">
+                          <div className="aspect-video overflow-hidden relative">
+                            <img
+                              src={
+                                similarProperty.images?.[0] ||
+                                "/placeholder-property.jpg"
+                              }
+                              alt={similarProperty.title}
+                              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                            />
+                            <div className="absolute top-3 left-3">
+                              <span className="bg-purple-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
+                                Same Area
+                              </span>
+                            </div>
+                          </div>
+                          <div className="p-6">
+                            <h3 className="font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors duration-200 line-clamp-1">
+                              {similarProperty.title}
+                            </h3>
+                            <p className="text-gray-600 text-sm mb-3 flex items-center">
+                              <MapPin className="h-4 w-4 mr-1" />
+                              {similarProperty.address}
+                            </p>
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="text-xl font-bold gradient-text">
+                                {formatPrice(similarProperty.price)}
+                              </div>
+                              <div className="flex items-center gap-2 text-xs text-gray-500">
+                                <span>{similarProperty.bedrooms}BR</span>
+                                <span>{similarProperty.area} sq ft</span>
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full">
+                                {similarProperty.property_type}
+                              </span>
+                              <div className="flex items-center gap-1">
+                                <Eye className="h-3 w-3 text-gray-400" />
+                                <span className="text-xs text-gray-500">
+                                  {similarProperty.views || 0}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                </div>
+              </div>
+            )}
+
+            {/* Recommended Properties */}
+            {recommendedProperties.length > 0 && (
+              <div
+                className={`transition-all duration-800 delay-800 ${
+                  animationTrigger ? "slide-in-up" : "opacity-0"
+                }`}
+              >
+                <div className="flex items-center justify-between mb-8">
+                  <h2 className="text-3xl font-bold text-gray-900">
+                    Recommended for You
+                  </h2>
+                  <div className="text-sm text-gray-500 bg-yellow-50 px-3 py-1 rounded-full flex items-center gap-1">
+                    <Star className="h-3 w-3 text-yellow-500 fill-current" />
+                    Personalized
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {recommendedProperties.map((similarProperty) => (
+                    <Link
+                      key={similarProperty.id}
+                      to={`/property/${similarProperty.id}`}
+                      className="group hover-lift"
+                    >
+                      <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300">
+                        <div className="aspect-video overflow-hidden relative">
+                          <img
+                            src={
+                              similarProperty.images?.[0] ||
+                              "/placeholder-property.jpg"
+                            }
+                            alt={similarProperty.title}
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                          />
+                          <div className="absolute top-3 left-3">
+                            <span className="bg-yellow-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
+                              Recommended
+                            </span>
+                          </div>
+                        </div>
+                        <div className="p-4">
+                          <h3 className="font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors duration-200 line-clamp-1 text-sm">
+                            {similarProperty.title}
+                          </h3>
+                          <p className="text-gray-600 text-xs mb-2 flex items-center">
+                            <MapPin className="h-3 w-3 mr-1" />
+                            {similarProperty.address}
+                          </p>
+                          <div className="text-lg font-bold gradient-text mb-2">
+                            {formatPrice(similarProperty.price)}
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
+                              {similarProperty.property_type}
+                            </span>
+                            <div className="flex items-center gap-1">
+                              <Eye className="h-3 w-3 text-gray-400" />
+                              <span className="text-xs text-gray-500">
+                                {similarProperty.views || 0}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+            {/* Properties in Same Area/Locality */}
+            {sameAreaProperties.length > 0 && (
+              <div
+                className={`transition-all duration-800 delay-900 ${
+                  animationTrigger ? "slide-in-up" : "opacity-0"
+                }`}
+              >
+                <div className="flex items-center justify-between mb-8">
+                  <h2 className="text-3xl font-bold text-gray-900">
+                    Properties in Same Locality
+                  </h2>
+                  <div className="text-sm text-gray-500 bg-indigo-50 px-3 py-1 rounded-full">
+                    {property.locality || property.city}
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {sameAreaProperties.map((similarProperty) => (
+                    <Link
+                      key={similarProperty.id}
+                      to={`/property/${similarProperty.id}`}
+                      className="group hover-lift"
+                    >
+                      <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300">
+                        <div className="aspect-video overflow-hidden relative">
+                          <img
+                            src={
+                              similarProperty.images?.[0] ||
+                              "/placeholder-property.jpg"
+                            }
+                            alt={similarProperty.title}
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                          />
+                          <div className="absolute top-3 left-3">
+                            <span className="bg-indigo-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
+                              Same Locality
+                            </span>
+                          </div>
+                        </div>
+                        <div className="p-6">
+                          <h3 className="font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors duration-200 line-clamp-1">
+                            {similarProperty.title}
+                          </h3>
+                          <p className="text-gray-600 text-sm mb-3 flex items-center">
+                            <MapPin className="h-4 w-4 mr-1" />
+                            {similarProperty.address}
+                          </p>
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="text-xl font-bold gradient-text">
+                              {formatPrice(similarProperty.price)}
+                            </div>
+                            <div className="flex items-center gap-2 text-xs text-gray-500">
+                              <span>{similarProperty.bedrooms}BR</span>
+                              <span>{similarProperty.area} sq ft</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full">
+                              {similarProperty.property_type}
+                            </span>
+                            <div className="flex items-center gap-1">
+                              <Eye className="h-3 w-3 text-gray-400" />
+                              <span className="text-xs text-gray-500">
+                                {similarProperty.views || 0}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Properties with Same BHK Configuration */}
+            {sameBHKProperties.length > 0 && (
+              <div
+                className={`transition-all duration-800 delay-1000 ${
+                  animationTrigger ? "slide-in-up" : "opacity-0"
+                }`}
+              >
+                <div className="flex items-center justify-between mb-8">
+                  <h2 className="text-3xl font-bold text-gray-900">
+                    Same BHK Configuration
+                  </h2>
+                  <div className="text-sm text-gray-500 bg-teal-50 px-3 py-1 rounded-full flex items-center gap-1">
+                    <Bed className="h-3 w-3" />
+                    {property.bedrooms}BHK • {property.bathrooms} Bath
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {sameBHKProperties.map((similarProperty) => (
+                    <Link
+                      key={similarProperty.id}
+                      to={`/property/${similarProperty.id}`}
+                      className="group hover-lift"
+                    >
+                      <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300">
+                        <div className="aspect-video overflow-hidden relative">
+                          <img
+                            src={
+                              similarProperty.images?.[0] ||
+                              "/placeholder-property.jpg"
+                            }
+                            alt={similarProperty.title}
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                          />
+                          <div className="absolute top-3 left-3">
+                            <span className="bg-teal-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
+                              Same BHK
+                            </span>
+                          </div>
+                        </div>
+                        <div className="p-6">
+                          <h3 className="font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors duration-200 line-clamp-1">
+                            {similarProperty.title}
+                          </h3>
+                          <p className="text-gray-600 text-sm mb-3 flex items-center">
+                            <MapPin className="h-4 w-4 mr-1" />
+                            {similarProperty.address}
+                          </p>
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="text-xl font-bold gradient-text">
+                              {formatPrice(similarProperty.price)}
+                            </div>
+                            <div className="flex items-center gap-2 text-xs text-gray-500">
+                              <span>{similarProperty.bedrooms}BR</span>
+                              <span>{similarProperty.bathrooms}BA</span>
+                              <span>{similarProperty.area} sq ft</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs bg-teal-100 text-teal-800 px-2 py-1 rounded-full">
+                              {similarProperty.property_type}
+                            </span>
+                            <div className="flex items-center gap-1">
+                              <Eye className="h-3 w-3 text-gray-400" />
+                              <span className="text-xs text-gray-500">
+                                {similarProperty.views || 0}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Properties with Similar Size */}
+            {similarSizeProperties.length > 0 && (
+              <div
+                className={`transition-all duration-800 delay-1100 ${
+                  animationTrigger ? "slide-in-up" : "opacity-0"
+                }`}
+              >
+                <div className="flex items-center justify-between mb-8">
+                  <h2 className="text-3xl font-bold text-gray-900">
+                    Similar Size Properties
+                  </h2>
+                  <div className="text-sm text-gray-500 bg-orange-50 px-3 py-1 rounded-full flex items-center gap-1">
+                    <Square className="h-3 w-3" />
+                    {property.area
+                      ? `${property.area - 200} - ${property.area + 200}`
+                      : "800 - 1200"}{" "}
+                    sq ft
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {similarSizeProperties.map((similarProperty) => (
+                    <Link
+                      key={similarProperty.id}
+                      to={`/property/${similarProperty.id}`}
+                      className="group hover-lift"
+                    >
+                      <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300">
+                        <div className="aspect-video overflow-hidden relative">
+                          <img
+                            src={
+                              similarProperty.images?.[0] ||
+                              "/placeholder-property.jpg"
+                            }
+                            alt={similarProperty.title}
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                          />
+                          <div className="absolute top-3 left-3">
+                            <span className="bg-orange-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
+                              Similar Size
+                            </span>
+                          </div>
+                        </div>
+                        <div className="p-6">
+                          <h3 className="font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors duration-200 line-clamp-1">
+                            {similarProperty.title}
+                          </h3>
+                          <p className="text-gray-600 text-sm mb-3 flex items-center">
+                            <MapPin className="h-4 w-4 mr-1" />
+                            {similarProperty.address}
+                          </p>
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="text-xl font-bold gradient-text">
+                              {formatPrice(similarProperty.price)}
+                            </div>
+                            <div className="flex items-center gap-2 text-xs text-gray-500">
+                              <span>{similarProperty.bedrooms}BR</span>
+                              <span className="font-semibold text-orange-600">
+                                {similarProperty.area} sq ft
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-full">
+                              {similarProperty.property_type}
+                            </span>
+                            <div className="flex items-center gap-1">
+                              <Eye className="h-3 w-3 text-gray-400" />
+                              <span className="text-xs text-gray-500">
+                                {similarProperty.views || 0}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Properties by Same Builder */}
+            {sameBuilderProperties.length > 0 && (
+              <div
+                className={`transition-all duration-800 delay-1200 ${
+                  animationTrigger ? "slide-in-up" : "opacity-0"
+                }`}
+              >
+                <div className="flex items-center justify-between mb-8">
+                  <h2 className="text-3xl font-bold text-gray-900">
+                    More from Same Builder
+                  </h2>
+                  <div className="text-sm text-gray-500 bg-pink-50 px-3 py-1 rounded-full flex items-center gap-1">
+                    <Building className="h-3 w-3" />
+                    {property.builder || "Premium Builder"}
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {sameBuilderProperties.map((similarProperty) => (
+                    <Link
+                      key={similarProperty.id}
+                      to={`/property/${similarProperty.id}`}
+                      className="group hover-lift"
+                    >
+                      <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300">
+                        <div className="aspect-video overflow-hidden relative">
+                          <img
+                            src={
+                              similarProperty.images?.[0] ||
+                              "/placeholder-property.jpg"
+                            }
+                            alt={similarProperty.title}
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                          />
+                          <div className="absolute top-3 left-3">
+                            <span className="bg-pink-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
+                              Same Builder
+                            </span>
+                          </div>
+                        </div>
+                        <div className="p-4">
+                          <h3 className="font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors duration-200 line-clamp-1 text-sm">
+                            {similarProperty.title}
+                          </h3>
+                          <p className="text-gray-600 text-xs mb-2 flex items-center">
+                            <MapPin className="h-3 w-3 mr-1" />
+                            {similarProperty.address}
+                          </p>
+                          <div className="text-lg font-bold gradient-text mb-2">
+                            {formatPrice(similarProperty.price)}
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs bg-pink-100 text-pink-800 px-2 py-1 rounded-full">
+                              {similarProperty.property_type}
+                            </span>
+                            <div className="flex items-center gap-1">
+                              <Eye className="h-3 w-3 text-gray-400" />
+                              <span className="text-xs text-gray-500">
+                                {similarProperty.views || 0}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Properties Near Metro */}
+            {nearbyMetroProperties.length > 0 && (
+              <div
+                className={`transition-all duration-800 delay-1300 ${
+                  animationTrigger ? "slide-in-up" : "opacity-0"
+                }`}
+              >
+                <div className="flex items-center justify-between mb-8">
+                  <h2 className="text-3xl font-bold text-gray-900">
+                    Properties Near Metro
+                  </h2>
+                  <div className="text-sm text-gray-500 bg-cyan-50 px-3 py-1 rounded-full flex items-center gap-1">
+                    <Train className="h-3 w-3" />
+                    Within 2km of Metro
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {nearbyMetroProperties.map((similarProperty) => (
+                    <Link
+                      key={similarProperty.id}
+                      to={`/property/${similarProperty.id}`}
+                      className="group hover-lift"
+                    >
+                      <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300">
+                        <div className="aspect-video overflow-hidden relative">
+                          <img
+                            src={
+                              similarProperty.images?.[0] ||
+                              "/placeholder-property.jpg"
+                            }
+                            alt={similarProperty.title}
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                          />
+                          <div className="absolute top-3 left-3">
+                            <span className="bg-cyan-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
+                              Near Metro
+                            </span>
+                          </div>
+                          <div className="absolute top-3 right-3">
+                            <div className="bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 text-xs font-medium text-cyan-700">
+                              {similarProperty.metro_distance
+                                ? `${(
+                                    similarProperty.metro_distance / 1000
+                                  ).toFixed(1)}km`
+                                : "1.5km"}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="p-4">
+                          <h3 className="font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors duration-200 line-clamp-1 text-sm">
+                            {similarProperty.title}
+                          </h3>
+                          <p className="text-gray-600 text-xs mb-2 flex items-center">
+                            <MapPin className="h-3 w-3 mr-1" />
+                            {similarProperty.address}
+                          </p>
+                          <div className="text-lg font-bold gradient-text mb-2">
+                            {formatPrice(similarProperty.price)}
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs bg-cyan-100 text-cyan-800 px-2 py-1 rounded-full">
+                              {similarProperty.property_type}
+                            </span>
+                            <div className="flex items-center gap-1">
+                              <Eye className="h-3 w-3 text-gray-400" />
+                              <span className="text-xs text-gray-500">
+                                {similarProperty.views || 0}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Comprehensive Footer Sections */}
+          <div className="mt-20 space-y-16">
+            {/* Area Statistics & Demographics */}
+            <div
+              className={`transition-all duration-800 delay-900 ${
+                animationTrigger ? "slide-in-up" : "opacity-0"
+              }`}
+            >
+              <h2 className="text-3xl font-bold text-gray-900 mb-8">
+                Area Statistics & Demographics
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="bg-white border border-gray-200 rounded-2xl p-6 text-center">
+                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Users className="h-8 w-8 text-blue-600" />
+                  </div>
+                  <div className="text-2xl font-bold text-gray-900 mb-2">
+                    45,000+
+                  </div>
+                  <div className="text-sm text-gray-600">Population</div>
+                </div>
+
+                <div className="bg-white border border-gray-200 rounded-2xl p-6 text-center">
+                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <TrendingUp className="h-8 w-8 text-green-600" />
+                  </div>
+                  <div className="text-2xl font-bold text-gray-900 mb-2">
+                    12.5%
+                  </div>
+                  <div className="text-sm text-gray-600">Annual Growth</div>
+                </div>
+
+                <div className="bg-white border border-gray-200 rounded-2xl p-6 text-center">
+                  <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <DollarSign className="h-8 w-8 text-purple-600" />
+                  </div>
+                  <div className="text-2xl font-bold text-gray-900 mb-2">
+                    ₹8.5L
+                  </div>
+                  <div className="text-sm text-gray-600">Avg. Income</div>
+                </div>
+
+                <div className="bg-white border border-gray-200 rounded-2xl p-6 text-center">
+                  <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Award className="h-8 w-8 text-orange-600" />
+                  </div>
+                  <div className="text-2xl font-bold text-gray-900 mb-2">
+                    4.2/5
+                  </div>
+                  <div className="text-sm text-gray-600">Livability Score</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Future Development Projects */}
+            <div
+              className={`transition-all duration-800 delay-1000 ${
+                animationTrigger ? "slide-in-up" : "opacity-0"
+              }`}
+            >
+              <h2 className="text-3xl font-bold text-gray-900 mb-8">
+                Upcoming Development Projects
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="bg-white border border-gray-200 rounded-2xl p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                      <Train className="h-6 w-6 text-blue-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900">
+                        Metro Extension
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        Phase 3 Development
+                      </p>
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-700 mb-3">
+                    New metro line connecting to city center, reducing travel
+                    time by 40%.
+                  </p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                      2025 Completion
+                    </span>
+                    <span className="text-xs text-gray-500">2.1 km away</span>
+                  </div>
+                </div>
+
+                <div className="bg-white border border-gray-200 rounded-2xl p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                      <ShoppingBag className="h-6 w-6 text-green-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900">Mega Mall</h3>
+                      <p className="text-sm text-gray-600">Shopping Complex</p>
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-700 mb-3">
+                    5-story shopping mall with 200+ brands and entertainment
+                    zone.
+                  </p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                      2024 Opening
+                    </span>
+                    <span className="text-xs text-gray-500">1.8 km away</span>
+                  </div>
+                </div>
+
+                <div className="bg-white border border-gray-200 rounded-2xl p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                      <TreePine className="h-6 w-6 text-purple-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900">
+                        Central Park
+                      </h3>
+                      <p className="text-sm text-gray-600">Green Space</p>
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-700 mb-3">
+                    50-acre central park with jogging tracks, playground, and
+                    lake.
+                  </p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full">
+                      2026 Launch
+                    </span>
+                    <span className="text-xs text-gray-500">0.9 km away</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Government Schemes & Benefits */}
+            <div
+              className={`transition-all duration-800 delay-1100 ${
+                animationTrigger ? "slide-in-up" : "opacity-0"
+              }`}
+            >
+              <h2 className="text-3xl font-bold text-gray-900 mb-8">
+                Government Schemes & Benefits
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-2xl p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
+                      <Home className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900">
+                        PMAY Scheme
+                      </h3>
+                      <p className="text-sm text-blue-700">
+                        Pradhan Mantri Awas Yojana
+                      </p>
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-700 mb-4">
+                    Get up to ₹2.67 lakh subsidy on home loans under PMAY
+                    scheme.
+                  </p>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Max Subsidy</span>
+                      <span className="font-semibold text-blue-600">
+                        ₹2.67 Lakh
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Interest Rate</span>
+                      <span className="font-semibold text-blue-600">
+                        6.5% onwards
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-2xl p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center">
+                      <Percent className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900">
+                        Tax Benefits
+                      </h3>
+                      <p className="text-sm text-green-700">
+                        Section 80C & 24B
+                      </p>
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-700 mb-4">
+                    Save up to ₹3.5 lakh annually through various tax
+                    deductions.
+                  </p>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Principal Deduction</span>
+                      <span className="font-semibold text-green-600">
+                        ₹1.5 Lakh
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Interest Deduction</span>
+                      <span className="font-semibold text-green-600">
+                        ₹2 Lakh
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Property Market Insights */}
+            <div
+              className={`transition-all duration-800 delay-1200 ${
+                animationTrigger ? "slide-in-up" : "opacity-0"
+              }`}
+            >
+              <h2 className="text-3xl font-bold text-gray-900 mb-8">
+                Market Insights & Trends
+              </h2>
+              <div className="bg-white border border-gray-200 rounded-2xl p-8">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  <div>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-4">
+                      Price Trends
+                    </h3>
+                    <div className="bg-gray-50 rounded-xl h-48 flex items-center justify-center mb-4">
+                      <div className="text-center">
+                        <LineChart className="h-12 w-12 text-blue-600 mx-auto mb-2" />
+                        <p className="text-sm text-gray-600">
+                          Price trend chart for last 12 months
+                        </p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-4 text-center">
+                      <div>
+                        <div className="text-lg font-bold text-green-600">
+                          +8.2%
+                        </div>
+                        <div className="text-xs text-gray-600">YoY Growth</div>
+                      </div>
+                      <div>
+                        <div className="text-lg font-bold text-blue-600">
+                          ₹5,850
+                        </div>
+                        <div className="text-xs text-gray-600">
+                          Avg. per sq ft
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-lg font-bold text-purple-600">
+                          245
+                        </div>
+                        <div className="text-xs text-gray-600">
+                          Properties Sold
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-4">
+                      Market Analysis
+                    </h3>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <TrendingUp className="h-4 w-4 text-green-600" />
+                          <span className="text-sm font-medium">Demand</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-20 bg-gray-200 rounded-full h-2">
+                            <div
+                              className="bg-green-600 h-2 rounded-full"
+                              style={{ width: "85%" }}
+                            ></div>
+                          </div>
+                          <span className="text-sm font-semibold text-green-600">
+                            High
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <Building className="h-4 w-4 text-blue-600" />
+                          <span className="text-sm font-medium">Supply</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-20 bg-gray-200 rounded-full h-2">
+                            <div
+                              className="bg-blue-600 h-2 rounded-full"
+                              style={{ width: "60%" }}
+                            ></div>
+                          </div>
+                          <span className="text-sm font-semibold text-blue-600">
+                            Medium
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <Star className="h-4 w-4 text-purple-600" />
+                          <span className="text-sm font-medium">
+                            Investment Score
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-20 bg-gray-200 rounded-full h-2">
+                            <div
+                              className="bg-purple-600 h-2 rounded-full"
+                              style={{ width: "90%" }}
+                            ></div>
+                          </div>
+                          <span className="text-sm font-semibold text-purple-600">
+                            Excellent
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Lightbulb className="h-4 w-4 text-yellow-600" />
+                          <span className="text-sm font-semibold text-yellow-800">
+                            Expert Insight
+                          </span>
+                        </div>
+                        <p className="text-sm text-yellow-700">
+                          This area shows strong growth potential with upcoming
+                          infrastructure projects. Property values are expected
+                          to appreciate by 15-20% over the next 2 years.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Contact & Support Footer */}
+            <div
+              className={`transition-all duration-800 delay-1300 ${
+                animationTrigger ? "slide-in-up" : "opacity-0"
+              }`}
+            >
+              <div className="bg-gradient-to-br from-blue-900 via-blue-800 to-purple-900 rounded-2xl p-8 text-white">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                  <div>
+                    <h3 className="text-xl font-semibold mb-4">Need Help?</h3>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Phone className="h-4 w-4" />
+                        <span className="text-sm">+91 98765 43210</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-4 w-4" />
+                        <span className="text-sm">support@easyprop.com</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4" />
+                        <span className="text-sm">24/7 Support</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-xl font-semibold mb-4">Quick Links</h3>
+                    <div className="space-y-2">
+                      <a
+                        href="#"
+                        className="block text-sm hover:text-blue-300 transition-colors"
+                      >
+                        Property Valuation
+                      </a>
+                      <a
+                        href="#"
+                        className="block text-sm hover:text-blue-300 transition-colors"
+                      >
+                        Home Loan Calculator
+                      </a>
+                      <a
+                        href="#"
+                        className="block text-sm hover:text-blue-300 transition-colors"
+                      >
+                        Legal Assistance
+                      </a>
+                      <a
+                        href="#"
+                        className="block text-sm hover:text-blue-300 transition-colors"
+                      >
+                        Property Management
+                      </a>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-xl font-semibold mb-4">Services</h3>
+                    <div className="space-y-2">
+                      <a
+                        href="#"
+                        className="block text-sm hover:text-blue-300 transition-colors"
+                      >
+                        Buy Property
+                      </a>
+                      <a
+                        href="#"
+                        className="block text-sm hover:text-blue-300 transition-colors"
+                      >
+                        Sell Property
+                      </a>
+                      <a
+                        href="#"
+                        className="block text-sm hover:text-blue-300 transition-colors"
+                      >
+                        Rent Property
+                      </a>
+                      <a
+                        href="#"
+                        className="block text-sm hover:text-blue-300 transition-colors"
+                      >
+                        Property Investment
+                      </a>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-xl font-semibold mb-4">Stay Updated</h3>
+                    <p className="text-sm mb-4">
+                      Get latest property updates and market insights
+                    </p>
+                    <div className="flex gap-2">
+                      <input
+                        type="email"
+                        placeholder="Your email"
+                        className="flex-1 px-3 py-2 rounded-lg text-gray-900 text-sm"
+                      />
+                      <button className="bg-white text-blue-900 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-100 transition-colors">
+                        Subscribe
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-white/20 mt-8 pt-8 text-center">
+                  <p className="text-sm opacity-80">
+                    © 2024 EasyProp. All rights reserved. | Privacy Policy |
+                    Terms of Service
                   </p>
                 </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                  <div className="text-center p-6 glass-morphism rounded-2xl shadow-sm hover-lift">
-                    <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <TrendingUp className="h-8 w-8 text-green-600" />
-                    </div>
-                    <div className="text-3xl font-bold text-green-600 mb-2 font-poppins">
-                      +{marketTrends?.priceGrowth || 12.5}%
-                    </div>
-                    <div className="text-slate-600 font-semibold mb-2">Price Growth</div>
-                    <div className="text-sm text-slate-500">
-                      Properties in this area have shown consistent growth
-                    </div>
-                  </div>
-                  
-                  <div className="text-center p-6 glass-morphism rounded-2xl shadow-sm hover-lift">
-                    <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Target className="h-8 w-8 text-blue-600" />
-                    </div>
-                    <div className="text-3xl font-bold text-blue-600 mb-2 font-poppins">
-                      {(marketTrends?.demandLevel || "high") === "high" ? "High" : "Medium"}
-                    </div>
-                    <div className="text-slate-600 font-semibold mb-2">Demand Level</div>
-                    <div className="text-sm text-slate-500">
-                      Strong buyer interest in this locality
-                    </div>
-                  </div>
-                  
-                  <div className="text-center p-6 glass-morphism rounded-2xl shadow-sm hover-lift">
-                    <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Award className="h-8 w-8 text-purple-600" />
-                    </div>
-                    <div className="text-3xl font-bold text-purple-600 mb-2 font-poppins">
-                      {Math.round(propertyScore * 10) / 10}
-                    </div>
-                    <div className="text-slate-600 font-semibold mb-2">Property Score</div>
-                    <div className="text-sm text-slate-500">
-                      Based on location, amenities, and value
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Enhanced Modals */}
-        
-        {/* Image Gallery Modal */}
-        {isImageGalleryOpen && property.images && (
-          <div className="fixed inset-0 z-50 bg-black bg-opacity-90 flex items-center justify-center">
-            <div className="relative w-full h-full flex items-center justify-center">
-              <button
-                onClick={() => setIsImageGalleryOpen(false)}
-                className="absolute top-4 right-4 text-white p-2 rounded-full hover:bg-white hover:bg-opacity-20 transition-colors z-10"
-              >
-                <X className="w-6 h-6" />
-              </button>
-              
-              <img
-                src={property.images[currentImageIndex]}
-                alt={property.title}
-                className="max-w-full max-h-full object-contain"
-              />
-              
-              <button
-                onClick={prevImage}
-                className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white p-2 rounded-full hover:bg-white hover:bg-opacity-20 transition-colors"
-              >
-                <ChevronLeft className="w-8 h-8" />
-              </button>
-              
-              <button
-                onClick={nextImage}
-                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white p-2 rounded-full hover:bg-white hover:bg-opacity-20 transition-colors"
-              >
-                <ChevronRight className="w-8 h-8" />
-              </button>
-              
-              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
-                {property.images.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setCurrentImageIndex(index)}
-                    className={`w-3 h-3 rounded-full transition-all ${
-                      index === currentImageIndex ? 'bg-white' : 'bg-white bg-opacity-50'
-                    }`}
-                  />
-                ))}
               </div>
             </div>
           </div>
-        )}
+        </div>
+      </div>
 
-        {/* Contact Modal */}
-        {showContactModal && (
-          <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4">
-            <div className="glass-morphism rounded-3xl max-w-md w-full p-8 luxury-shadow">
+      {/* Contact Modal */}
+      {showContactModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto scale-in">
+            <div className="p-6">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-2xl font-bold text-slate-900 font-poppins">Contact Agent</h3>
+                <h3 className="text-xl font-bold text-gray-900">
+                  Send Message
+                </h3>
                 <button
                   onClick={() => setShowContactModal(false)}
-                  className="p-2 rounded-full hover:bg-slate-100 transition-colors"
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors duration-200"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="h-5 w-5 text-gray-500" />
                 </button>
               </div>
-              
-              {messageSent && (
-                <div className="mb-6 p-4 bg-green-100 border border-green-300 rounded-2xl flex items-center">
-                  <CheckCircle className="w-5 h-5 text-green-600 mr-2" />
-                  <span className="text-green-700 font-semibold">Message sent successfully!</span>
-                </div>
-              )}
 
               <form onSubmit={handleMessageSubmit} className="space-y-4">
                 <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Name
+                  </label>
                   <input
                     type="text"
                     name="name"
                     value={messageForm.name}
                     onChange={handleInputChange}
-                    placeholder="Your Name"
-                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                     required
                   />
                 </div>
-                
+
                 <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Email
+                  </label>
                   <input
                     type="email"
                     name="email"
                     value={messageForm.email}
                     onChange={handleInputChange}
-                    placeholder="Your Email"
-                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                     required
                   />
                 </div>
-                
+
                 <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Phone (Optional)
+                  </label>
                   <input
                     type="tel"
                     name="phone"
                     value={messageForm.phone}
                     onChange={handleInputChange}
-                    placeholder="Your Phone (Optional)"
-                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                   />
                 </div>
-                
+
                 <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Message
+                  </label>
                   <textarea
                     name="message"
                     value={messageForm.message}
                     onChange={handleInputChange}
-                    placeholder="Your Message"
-                    rows="4"
-                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 resize-none transition-all"
+                    rows={4}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none"
                     required
                   />
                 </div>
-                
+
                 <button
                   type="submit"
-                  disabled={sendingMessage || !user}
-                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 px-4 rounded-xl font-bold hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                  disabled={sendingMessage}
+                  className="w-full interactive-button bg-blue-600 text-white py-3 px-4 rounded-xl font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 flex items-center justify-center gap-2"
                 >
                   {sendingMessage ? (
                     <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                       Sending...
                     </>
                   ) : (
                     <>
-                      <Send className="w-4 h-4" />
-                      <span>{!user ? 'Login to Send' : 'Send Message'}</span>
+                      <Send className="h-5 w-5" />
+                      Send Message
                     </>
                   )}
                 </button>
               </form>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Schedule Visit Modal */}
-        {showScheduleModal && (
-          <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4">
-            <div className="glass-morphism rounded-3xl max-w-md w-full p-8 luxury-shadow">
+      {/* Schedule Modal */}
+      {showScheduleModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto scale-in">
+            <div className="p-6">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-2xl font-bold text-slate-900 font-poppins">Schedule a Visit</h3>
+                <h3 className="text-xl font-bold text-gray-900">
+                  Schedule Visit
+                </h3>
                 <button
                   onClick={() => setShowScheduleModal(false)}
-                  className="p-2 rounded-full hover:bg-slate-100 transition-colors"
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors duration-200"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="h-5 w-5 text-gray-500" />
                 </button>
               </div>
-              
-              {visitScheduled && (
-                <div className="mb-6 p-4 bg-green-100 border border-green-300 rounded-2xl flex items-center">
-                  <CheckCircle className="w-5 h-5 text-green-600 mr-2" />
-                  <span className="text-green-700 font-semibold">Visit scheduled successfully!</span>
-                </div>
-              )}
 
               <form onSubmit={handleScheduleSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">
-                    Visit Type
-                  </label>
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setScheduleForm(prev => ({ ...prev, visitType: 'physical' }))}
-                      className={`p-3 rounded-xl border-2 transition-all ${
-                        scheduleForm.visitType === 'physical'
-                          ? 'border-blue-500 bg-blue-50 text-blue-700'
-                          : 'border-slate-200 hover:border-slate-300'
-                      }`}
-                    >
-                      <Home className="h-5 w-5 mx-auto mb-1" />
-                      <span className="text-sm font-semibold">Physical Visit</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setScheduleForm(prev => ({ ...prev, visitType: 'virtual' }))}
-                      className={`p-3 rounded-xl border-2 transition-all ${
-                        scheduleForm.visitType === 'virtual'
-                          ? 'border-blue-500 bg-blue-50 text-blue-700'
-                          : 'border-slate-200 hover:border-slate-300'
-                      }`}
-                    >
-                      <Video className="h-5 w-5 mx-auto mb-1" />
-                      <span className="text-sm font-semibold">Virtual Tour</span>
-                    </button>
-                  </div>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Preferred Date
                   </label>
                   <input
                     type="date"
                     value={scheduleForm.date}
-                    onChange={(e) => setScheduleForm(prev => ({ ...prev, date: e.target.value }))}
-                    min={new Date().toISOString().split('T')[0]}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+                    onChange={(e) =>
+                      setScheduleForm((prev) => ({
+                        ...prev,
+                        date: e.target.value,
+                      }))
+                    }
+                    min={new Date().toISOString().split("T")[0]}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                     required
                   />
                 </div>
-                
+
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Preferred Time
                   </label>
                   <select
                     value={scheduleForm.time}
-                    onChange={(e) => setScheduleForm(prev => ({ ...prev, time: e.target.value }))}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+                    onChange={(e) =>
+                      setScheduleForm((prev) => ({
+                        ...prev,
+                        time: e.target.value,
+                      }))
+                    }
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                     required
                   >
-                    <option value="">Select Time</option>
+                    <option value="">Select time</option>
                     <option value="09:00">9:00 AM</option>
                     <option value="10:00">10:00 AM</option>
                     <option value="11:00">11:00 AM</option>
@@ -2448,393 +3452,279 @@ const PropertyDetails = () => {
                     <option value="17:00">5:00 PM</option>
                   </select>
                 </div>
-                
+
                 <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Visit Type
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setScheduleForm((prev) => ({
+                          ...prev,
+                          visitType: "physical",
+                        }))
+                      }
+                      className={`p-3 rounded-xl border-2 transition-all duration-200 ${
+                        scheduleForm.visitType === "physical"
+                          ? "border-blue-500 bg-blue-50 text-blue-700"
+                          : "border-gray-300 hover:border-gray-400"
+                      }`}
+                    >
+                      <Home className="h-5 w-5 mx-auto mb-1" />
+                      <div className="text-sm font-medium">Physical</div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setScheduleForm((prev) => ({
+                          ...prev,
+                          visitType: "virtual",
+                        }))
+                      }
+                      className={`p-3 rounded-xl border-2 transition-all duration-200 ${
+                        scheduleForm.visitType === "virtual"
+                          ? "border-blue-500 bg-blue-50 text-blue-700"
+                          : "border-gray-300 hover:border-gray-400"
+                      }`}
+                    >
+                      <Video className="h-5 w-5 mx-auto mb-1" />
+                      <div className="text-sm font-medium">Virtual</div>
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Additional Message (Optional)
+                  </label>
                   <textarea
                     value={scheduleForm.message}
-                    onChange={(e) => setScheduleForm(prev => ({ ...prev, message: e.target.value }))}
-                    placeholder="Any specific requirements or questions?"
-                    rows="3"
-                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 resize-none transition-all"
+                    onChange={(e) =>
+                      setScheduleForm((prev) => ({
+                        ...prev,
+                        message: e.target.value,
+                      }))
+                    }
+                    rows={3}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none"
+                    placeholder="Any specific requirements or questions..."
                   />
                 </div>
-                
+
                 <button
                   type="submit"
-                  disabled={schedulingVisit || !user}
-                  className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white py-3 px-4 rounded-xl font-bold hover:from-green-600 hover:to-emerald-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                  disabled={schedulingVisit}
+                  className="w-full interactive-button bg-blue-600 text-white py-3 px-4 rounded-xl font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 flex items-center justify-center gap-2"
                 >
                   {schedulingVisit ? (
                     <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                       Scheduling...
                     </>
                   ) : (
                     <>
-                      <Calendar className="w-4 h-4" />
-                      <span>{!user ? 'Login to Schedule' : 'Schedule Visit'}</span>
+                      <Calendar className="h-5 w-5" />
+                      Schedule Visit
                     </>
                   )}
                 </button>
               </form>
             </div>
           </div>
-        )}      
-  {/* Mortgage Calculator Modal */}
-        {showMortgageCalculator && (
-          <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4">
-            <div className="glass-morphism rounded-3xl max-w-lg w-full p-8 luxury-shadow max-h-[90vh] overflow-y-auto">
+        </div>
+      )}
+
+      {/* Mortgage Calculator Modal */}
+      {showMortgageCalculator && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto scale-in">
+            <div className="p-6">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-2xl font-bold text-slate-900 font-poppins">EMI Calculator</h3>
+                <h3 className="text-xl font-bold text-gray-900">
+                  Mortgage Calculator
+                </h3>
                 <button
                   onClick={() => setShowMortgageCalculator(false)}
-                  className="p-2 rounded-full hover:bg-slate-100 transition-colors"
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors duration-200"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="h-5 w-5 text-gray-500" />
                 </button>
               </div>
 
               <div className="space-y-6">
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">
-                    Property Price: {formatPrice(property.price)}
-                  </label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Loan Amount
+                    </label>
+                    <input
+                      type="number"
+                      value={mortgageData.loanAmount}
+                      onChange={(e) =>
+                        setMortgageData((prev) => ({
+                          ...prev,
+                          loanAmount: Number(e.target.value),
+                        }))
+                      }
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Interest Rate (%)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={mortgageData.interestRate}
+                      onChange={(e) =>
+                        setMortgageData((prev) => ({
+                          ...prev,
+                          interestRate: Number(e.target.value),
+                        }))
+                      }
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Loan Term (Years)
+                    </label>
+                    <input
+                      type="number"
+                      value={mortgageData.loanTerm}
+                      onChange={(e) =>
+                        setMortgageData((prev) => ({
+                          ...prev,
+                          loanTerm: Number(e.target.value),
+                        }))
+                      }
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Down Payment
+                    </label>
+                    <input
+                      type="number"
+                      value={mortgageData.downPayment}
+                      onChange={(e) =>
+                        setMortgageData((prev) => ({
+                          ...prev,
+                          downPayment: Number(e.target.value),
+                        }))
+                      }
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    />
+                  </div>
                 </div>
-                
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">
-                    Down Payment (₹)
-                  </label>
-                  <input
-                    type="number"
-                    value={mortgageData.downPayment}
-                    onChange={(e) => setMortgageData(prev => ({ 
-                      ...prev, 
-                      downPayment: Number(e.target.value),
-                      loanAmount: property.price - Number(e.target.value)
-                    }))}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">
-                    Loan Amount: {formatPrice(mortgageData.loanAmount)}
-                  </label>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">
-                    Interest Rate (% per annum)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={mortgageData.interestRate}
-                    onChange={(e) => setMortgageData(prev => ({ ...prev, interestRate: Number(e.target.value) }))}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">
-                    Loan Term (Years)
-                  </label>
-                  <input
-                    type="number"
-                    value={mortgageData.loanTerm}
-                    onChange={(e) => setMortgageData(prev => ({ ...prev, loanTerm: Number(e.target.value) }))}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">
-                    Monthly Income (₹) - Optional
-                  </label>
-                  <input
-                    type="number"
-                    value={mortgageData.monthlyIncome}
-                    onChange={(e) => setMortgageData(prev => ({ ...prev, monthlyIncome: Number(e.target.value) }))}
-                    placeholder="For eligibility check"
-                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
-                  />
-                </div>
-                
+
                 <button
                   onClick={calculateMortgage}
-                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 px-4 rounded-xl font-bold hover:from-blue-700 hover:to-indigo-700 transition-all duration-300"
+                  className="w-full interactive-button bg-green-600 text-white py-3 px-4 rounded-xl font-semibold hover:bg-green-700 transition-all duration-300 flex items-center justify-center gap-2"
                 >
-                  Calculate EMI
+                  <Calculator className="h-5 w-5" />
+                  Calculate
                 </button>
-                
+
                 {mortgageResult && (
-                  <div className="mt-6 p-6 glass-morphism rounded-2xl">
-                    <h4 className="font-bold text-lg mb-4 text-slate-900">Calculation Results:</h4>
+                  <div className="bg-gray-50 rounded-xl p-6 space-y-4">
+                    <h4 className="font-bold text-gray-900 mb-4">
+                      Calculation Results
+                    </h4>
+
                     <div className="space-y-3">
                       <div className="flex justify-between items-center">
-                        <span className="text-slate-600">Monthly EMI:</span>
-                        <span className="font-bold text-blue-600 text-lg">{formatPrice(mortgageResult.monthlyPayment)}</span>
+                        <span className="text-gray-600">Monthly Payment</span>
+                        <span className="font-bold text-gray-900">
+                          ₹
+                          {mortgageResult.monthlyPayment.toLocaleString(
+                            "en-IN"
+                          )}
+                        </span>
                       </div>
+
                       <div className="flex justify-between items-center">
-                        <span className="text-slate-600">Total Payment:</span>
-                        <span className="font-bold text-slate-900">{formatPrice(mortgageResult.totalPayment)}</span>
+                        <span className="text-gray-600">Total Payment</span>
+                        <span className="font-bold text-gray-900">
+                          ₹{mortgageResult.totalPayment.toLocaleString("en-IN")}
+                        </span>
                       </div>
+
                       <div className="flex justify-between items-center">
-                        <span className="text-slate-600">Total Interest:</span>
-                        <span className="font-bold text-slate-900">{formatPrice(mortgageResult.totalInterest)}</span>
+                        <span className="text-gray-600">Total Interest</span>
+                        <span className="font-bold text-gray-900">
+                          ₹
+                          {mortgageResult.totalInterest.toLocaleString("en-IN")}
+                        </span>
                       </div>
                     </div>
-                    
-                    {eligibilityResult && (
-                      <div className="mt-4 pt-4 border-t border-slate-200">
-                        <h5 className="font-bold text-slate-900 mb-2">Eligibility Check:</h5>
-                        <div className={`p-3 rounded-xl ${eligibilityResult.eligible ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
-                          <div className="flex items-center space-x-2">
-                            {eligibilityResult.eligible ? (
-                              <CheckCircle className="h-5 w-5" />
-                            ) : (
-                              <AlertCircle className="h-5 w-5" />
-                            )}
-                            <span className="font-semibold">
-                              {eligibilityResult.eligible ? 'Eligible for loan' : 'May need higher income'}
-                            </span>
-                          </div>
-                          <div className="text-sm mt-2">
-                            EMI to Income Ratio: {eligibilityResult.utilizationRatio}% 
-                            (Recommended: &lt;50%)
-                          </div>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 )}
               </div>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Documents Modal */}
-        {showDocuments && (
-          <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4">
-            <div className="glass-morphism rounded-3xl max-w-lg w-full p-8 luxury-shadow">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-2xl font-bold text-slate-900 font-poppins">Property Documents</h3>
-                <button
-                  onClick={() => setShowDocuments(false)}
-                  className="p-2 rounded-full hover:bg-slate-100 transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
+      {/* Image Gallery Modal */}
+      {isImageGalleryOpen && (
+        <div className="fixed inset-0 bg-black z-50 flex items-center justify-center">
+          <button
+            onClick={() => setIsImageGalleryOpen(false)}
+            className="absolute top-6 right-6 z-10 p-3 bg-white/20 backdrop-blur-sm border border-white/30 rounded-full text-white hover:bg-white/30 transition-all duration-300"
+          >
+            <X className="h-6 w-6" />
+          </button>
 
-              <div className="space-y-4">
-                {availableDocuments.map((doc, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 glass-morphism rounded-xl hover:bg-white transition-colors">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                        <FileText className="h-5 w-5 text-blue-600" />
-                      </div>
-                      <div>
-                        <div className="font-semibold text-slate-900">{doc.name}</div>
-                        <div className="text-sm text-slate-500">{doc.size}</div>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      {doc.protected && (
-                        <Lock className="h-4 w-4 text-orange-500" />
-                      )}
-                      <button
-                        onClick={() => {
-                          if (doc.protected && !documentAccess) {
-                            alert('Please contact the agent to access this document');
-                          } else {
-                            alert('Download feature coming soon!');
-                          }
-                        }}
-                        className="px-3 py-1 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors"
-                      >
-                        {doc.protected && !documentAccess ? 'Request Access' : 'Download'}
-                      </button>
-                    </div>
-                  </div>
+          <div className="w-full h-full flex items-center justify-center p-6">
+            <img
+              src={property.images?.[currentImageIndex]}
+              alt={`${property.title} - Image ${currentImageIndex + 1}`}
+              className="max-w-full max-h-full object-contain"
+            />
+          </div>
+
+          {property.images && property.images.length > 1 && (
+            <>
+              <button
+                onClick={prevImage}
+                className="absolute left-6 top-1/2 -translate-y-1/2 p-3 bg-white/20 backdrop-blur-sm border border-white/30 rounded-full text-white hover:bg-white/30 transition-all duration-300"
+              >
+                <ChevronLeft className="h-6 w-6" />
+              </button>
+
+              <button
+                onClick={nextImage}
+                className="absolute right-6 top-1/2 -translate-y-1/2 p-3 bg-white/20 backdrop-blur-sm border border-white/30 rounded-full text-white hover:bg-white/30 transition-all duration-300"
+              >
+                <ChevronRight className="h-6 w-6" />
+              </button>
+
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
+                {property.images.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentImageIndex(index)}
+                    className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                      index === currentImageIndex
+                        ? "bg-white scale-125"
+                        : "bg-white/50 hover:bg-white/75"
+                    }`}
+                  />
                 ))}
               </div>
-
-              {!documentAccess && (
-                <div className="mt-6 p-4 bg-orange-50 rounded-xl">
-                  <div className="flex items-center space-x-2 text-orange-700">
-                    <Lock className="h-5 w-5" />
-                    <span className="font-semibold">Some documents require verification</span>
-                  </div>
-                  <p className="text-sm text-orange-600 mt-1">
-                    Contact the agent to get access to legal documents
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Virtual Tour Modal */}
-        {showVirtualTour && (
-          <div className="fixed inset-0 z-50 bg-black bg-opacity-90 flex items-center justify-center p-4">
-            <div className="w-full max-w-4xl h-full max-h-[80vh] glass-morphism rounded-3xl overflow-hidden">
-              <div className="flex items-center justify-between p-6 border-b border-white/20">
-                <h3 className="text-2xl font-bold text-white font-poppins">360° Virtual Tour</h3>
-                <button
-                  onClick={() => setShowVirtualTour(false)}
-                  className="p-2 rounded-full hover:bg-white hover:bg-opacity-20 transition-colors text-white"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-              
-              <div className="p-6">
-                <div className="h-96 bg-slate-800 rounded-2xl flex items-center justify-center mb-6">
-                  <div className="text-center text-white">
-                    <Play className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                    <p className="text-xl font-semibold">360° Virtual Tour</p>
-                    <p className="text-slate-300">Interactive tour coming soon</p>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-4 gap-4">
-                  {virtualTourRooms.map((room, index) => (
-                    <button
-                      key={room.id}
-                      onClick={() => setCurrentRoom(room.id)}
-                      className={`p-3 rounded-xl transition-all ${
-                        currentRoom === room.id
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-white/10 text-white hover:bg-white/20'
-                      }`}
-                    >
-                      <div className="text-sm font-semibold">{room.name}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Floor Plan Modal */}
-        {showFloorPlan && (
-          <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4">
-            <div className="glass-morphism rounded-3xl max-w-4xl w-full p-8 luxury-shadow">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-2xl font-bold text-slate-900 font-poppins">Floor Plans</h3>
-                <button
-                  onClick={() => setShowFloorPlan(false)}
-                  className="p-2 rounded-full hover:bg-slate-100 transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <div className="h-96 bg-slate-100 rounded-2xl flex items-center justify-center">
-                <div className="text-center">
-                  <Layers className="h-16 w-16 text-slate-400 mx-auto mb-4" />
-                  <p className="text-xl font-semibold text-slate-600">Floor Plan</p>
-                  <p className="text-slate-500">Detailed floor plan coming soon</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Price Comparison Modal */}
-        {showPriceComparison && (
-          <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4">
-            <div className="glass-morphism rounded-3xl max-w-4xl w-full p-8 luxury-shadow max-h-[90vh] overflow-y-auto">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-2xl font-bold text-slate-900 font-poppins">Price Comparison</h3>
-                <button
-                  onClick={() => setShowPriceComparison(false)}
-                  className="p-2 rounded-full hover:bg-slate-100 transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="text-center p-6 glass-morphism rounded-2xl">
-                    <div className="text-2xl font-bold text-blue-600 mb-2 font-poppins">
-                      {formatPrice(property.price)}
-                    </div>
-                    <div className="text-slate-600 font-semibold">This Property</div>
-                  </div>
-                  <div className="text-center p-6 glass-morphism rounded-2xl">
-                    <div className="text-2xl font-bold text-green-600 mb-2 font-poppins">
-                      {formatPrice(marketTrends?.averagePrice || 0)}
-                    </div>
-                    <div className="text-slate-600 font-semibold">Area Average</div>
-                  </div>
-                  <div className="text-center p-6 glass-morphism rounded-2xl">
-                    <div className="text-2xl font-bold text-purple-600 mb-2 font-poppins">
-                      ₹{marketTrends?.pricePerSqft || 0}
-                    </div>
-                    <div className="text-slate-600 font-semibold">Price per Sq Ft</div>
-                  </div>
-                </div>
-
-                <div className="h-64 bg-slate-100 rounded-2xl flex items-center justify-center">
-                  <div className="text-center">
-                    <BarChart3 className="h-16 w-16 text-slate-400 mx-auto mb-4" />
-                    <p className="text-xl font-semibold text-slate-600">Price Comparison Chart</p>
-                    <p className="text-slate-500">Interactive chart coming soon</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Nearby Map Modal */}
-        {showNearbyMap && (
-          <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4">
-            <div className="glass-morphism rounded-3xl max-w-6xl w-full p-8 luxury-shadow max-h-[90vh] overflow-y-auto">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-2xl font-bold text-slate-900 font-poppins">Location & Nearby Places</h3>
-                <button
-                  onClick={() => setShowNearbyMap(false)}
-                  className="p-2 rounded-full hover:bg-slate-100 transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <div className="h-96 bg-slate-100 rounded-2xl flex items-center justify-center mb-6">
-                <div className="text-center">
-                  <MapPin className="h-16 w-16 text-slate-400 mx-auto mb-4" />
-                  <p className="text-xl font-semibold text-slate-600">Interactive Map</p>
-                  <p className="text-slate-500">Google Maps integration coming soon</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {Object.entries(nearbyPlaces).map(([category, places]) => (
-                  <div key={category} className="glass-morphism p-4 rounded-2xl">
-                    <h4 className="font-bold text-slate-900 mb-3 capitalize font-poppins">
-                      {category}
-                    </h4>
-                    <div className="space-y-2">
-                      {places.slice(0, 3).map((place, index) => (
-                        <div key={index} className="flex items-center justify-between text-sm">
-                          <span className="text-slate-700">{place.name}</span>
-                          <span className="text-slate-500">{place.distance}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+            </>
+          )}
+        </div>
+      )}
     </>
   );
 };

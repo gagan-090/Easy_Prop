@@ -3,9 +3,11 @@ import { useParams, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { ArrowLeft, Calendar, Clock, User, Mail, Phone, MapPin, CheckCircle } from 'lucide-react';
 import { getPropertyById, scheduleTour } from '../services/supabaseService';
+import { useAuth } from '../contexts/AuthContext';
 
 const ScheduleTour = () => {
   const { id } = useParams();
+  const { user } = useAuth();
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
   const [formData, setFormData] = useState({
@@ -18,6 +20,18 @@ const ScheduleTour = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [property, setProperty] = useState(null);
   const [loadingProperty, setLoadingProperty] = useState(true);
+
+  // Pre-fill form with user data if logged in
+  useEffect(() => {
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        name: user.name || '',
+        email: user.email || '',
+        phone: user.phone || ''
+      }));
+    }
+  }, [user]);
 
   // Fetch property data
   useEffect(() => {
@@ -141,6 +155,7 @@ const ScheduleTour = () => {
       const tourData = {
         property_id: property.id,
         property_owner_id: property.user_id,
+        visitor_user_id: user?.uid || null, // Include user ID if logged in
         visitor_name: formData.name,
         visitor_email: formData.email,
         visitor_phone: formData.phone,
@@ -156,7 +171,12 @@ const ScheduleTour = () => {
         setIsSubmitted(true);
         toast.success('Tour scheduled successfully!');
       } else {
-        toast.error(result.error || 'Failed to schedule tour');
+        // Handle specific error for missing tours table
+        if (result.code === 'TOURS_TABLE_MISSING') {
+          toast.error('Tour scheduling is temporarily unavailable. Please contact the property owner directly.');
+        } else {
+          toast.error(result.error || 'Failed to schedule tour');
+        }
       }
     } catch (error) {
       console.error('Error scheduling tour:', error);
@@ -187,8 +207,21 @@ const ScheduleTour = () => {
             </p>
             <p className="text-sm text-slate-500 mb-8">
               The property owner has been notified and will contact you soon to confirm the tour details.
+              {user && (
+                <span className="block mt-2">
+                  You can track the status of this tour in your <Link to="/profile" className="text-blue-600 hover:text-blue-700 font-medium">profile</Link>.
+                </span>
+              )}
             </p>
             <div className="space-y-3">
+              {user && (
+                <Link
+                  to="/profile"
+                  className="w-full bg-blue-600 text-white py-3 text-center block rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                >
+                  View in My Profile
+                </Link>
+              )}
               <Link
                 to={`/property/${id}`}
                 className="w-full btn-primary py-3 text-center block"

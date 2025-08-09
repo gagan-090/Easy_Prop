@@ -40,6 +40,7 @@ import Analytics from "./pages/Dashboard/Analytics";
 import Tours from "./pages/Dashboard/Tours";
 import Settings from "./pages/Dashboard/Settings";
 import SearchFilterDemo from "./pages/SearchFilterDemo";
+import UserProfile from "./pages/UserProfile";
 
 // Routes
 import ProtectedRoute from "./routes/ProtectedRoute";
@@ -151,6 +152,19 @@ function App() {
             {/* Auth routes without navbar/footer */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            
+            {/* Protected profile route with navbar/footer */}
+            <Route path="/profile" element={
+              <ProtectedRoute>
+                <>
+                  <Navbar />
+                  <main className="flex-grow">
+                    <UserProfile />
+                  </main>
+                  <Footer />
+                </>
+              </ProtectedRoute>
+            } />
             
             {/* Debug route - remove in production */}
             <Route path="/email-debug" element={<EmailDebugger />} />

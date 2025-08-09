@@ -66,6 +66,68 @@ export const uploadImagesToStorage = async (images, userId) => {
   }
 };
 
+// Profile Photo Upload to Supabase Storage
+export const uploadProfilePhoto = async (userId, file) => {
+  try {
+    // Validate Firebase user before upload
+    const firebaseUser = validateFirebaseUser();
+    if (firebaseUser.uid !== userId) {
+      throw new Error('User ID mismatch - unauthorized upload attempt');
+    }
+    
+    console.log('📤 Uploading profile photo to Supabase Storage...');
+    
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      throw new Error('Invalid file type. Please upload an image.');
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      throw new Error('File size too large. Please upload an image smaller than 5MB.');
+    }
+    
+    // Create a unique filename
+    const fileExt = file.name.split('.').pop();
+    const fileName = `profile_${userId}_${Date.now()}.${fileExt}`;
+    const filePath = `profiles/${userId}/${fileName}`;
+    
+    console.log(`📁 Uploading profile photo ${fileName} to ${filePath}...`);
+    
+    // Upload to Supabase Storage
+    const { data, error } = await supabase.storage
+      .from('profile-photos')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: true // Allow overwriting existing files
+      });
+    
+    if (error) {
+      console.error(`❌ Error uploading profile photo:`, error);
+      throw error;
+    }
+    
+    // Get the public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from('profile-photos')
+      .getPublicUrl(filePath);
+    
+    console.log(`✅ Successfully uploaded profile photo:`, publicUrl);
+    
+    return { 
+      success: true, 
+      data: { 
+        publicUrl,
+        filePath,
+        fileName
+      }
+    };
+  } catch (error) {
+    console.error('❌ Error uploading profile photo:', error);
+    return { success: false, error: error.message };
+  }
+};
+
 // User Profile Management
 export const createUserProfile = async (userId, userData) => {
   try {
@@ -116,11 +178,20 @@ export const getUserProfile = async (userId) => {
       .from('users')
       .select('*')
       .eq('id', userId)
-      .single();
+      .maybeSingle(); // Use maybeSingle() to handle case where user doesn't exist
     
     console.log('📊 getUserProfile result:', { data, error });
     
-    if (error) throw error;
+    if (error) {
+      console.error('❌ Database error:', error);
+      return { success: false, error: error.message };
+    }
+    
+    if (!data) {
+      console.log('⚠️ User profile not found in database');
+      return { success: false, error: 'User profile not found' };
+    }
+    
     return { success: true, data };
   } catch (error) {
     console.error('❌ Error getting user profile:', error);
@@ -504,7 +575,7 @@ export const getFeaturedProperty = async () => {
   try {
     const { data, error } = await supabase
       .from('properties')
-      .select('*, users(name, profile, company)')
+      .select('*, users(name, profile, company, photo_url)')
       .eq('featured', true)
       .limit(1)
       .single();
@@ -521,7 +592,7 @@ export const getPopularProperties = async (limit = 6) => {
   try {
     const { data, error } = await supabase
       .from('properties')
-      .select('*, users(name, profile, company)')
+      .select('*, users(name, profile, company, photo_url)')
       .order('views', { ascending: false })
       .limit(limit);
     
@@ -617,23 +688,32 @@ export const getAllProperties = async (filters = {}) => {
   try {
     let query = supabase
       .from('properties')
-      .select('*, users(name, profile, company)')
+      .select('*, users(name, profile, company, photo_url)')
+      .eq('status', 'active')
       .order('created_at', { ascending: false });
 
     // Apply filters
-    if (filters.type) {
-      query = query.eq('type', filters.type);
+    if (filters.listingType) {
+      query = query.eq('type', filters.listingType);
     }
-    if (filters.property_type) {
-      query = query.eq('property_type', filters.property_type);
+    if (filters.propertyType) {
+      query = query.eq('property_type', filters.propertyType);
     }
     if (filters.city) {
       query = query.ilike('city', `%${filters.city}%`);
     }
+    if (filters.locality) {
+      query = query.ilike('locality', `%${filters.locality}%`);
+    }
     if (filters.priceRange) {
-      const [min, max] = filters.priceRange.split('-').map(Number);
-      if (min) query = query.gte('price', min);
-      if (max) query = query.lte('price', max);
+      if (filters.priceRange.includes('+')) {
+        const min = parseInt(filters.priceRange.replace('+', ''));
+        query = query.gte('price', min);
+      } else {
+        const [min, max] = filters.priceRange.split('-').map(Number);
+        if (min) query = query.gte('price', min);
+        if (max) query = query.lte('price', max);
+      }
     }
     if (filters.bhk) {
       if (filters.bhk === '4+') {
@@ -642,6 +722,69 @@ export const getAllProperties = async (filters = {}) => {
         query = query.eq('bedrooms', parseInt(filters.bhk));
       }
     }
+    if (filters.furnishing) {
+      query = query.eq('furnishing', filters.furnishing);
+    }
+    if (filters.facing) {
+      query = query.eq('facing', filters.facing);
+    }
+    if (filters.ageOfProperty) {
+      if (filters.ageOfProperty === '0-1') {
+        query = query.lte('age_of_property', 1);
+      } else if (filters.ageOfProperty === '1-5') {
+        query = query.gte('age_of_property', 1).lte('age_of_property', 5);
+      } else if (filters.ageOfProperty === '5-10') {
+        query = query.gte('age_of_property', 5).lte('age_of_property', 10);
+      } else if (filters.ageOfProperty === '10+') {
+        query = query.gte('age_of_property', 10);
+      }
+    }
+    if (filters.areaRange) {
+      const [min, max] = filters.areaRange.split('-').map(Number);
+      if (min) query = query.gte('area', min);
+      if (max) query = query.lte('area', max);
+    }
+    if (filters.amenities && filters.amenities.length > 0) {
+      query = query.contains('amenities', filters.amenities);
+    }
+    if (filters.searchQuery) {
+      query = query.or(`title.ilike.%${filters.searchQuery}%,description.ilike.%${filters.searchQuery}%,address.ilike.%${filters.searchQuery}%,locality.ilike.%${filters.searchQuery}%`);
+    }
+    if (filters.sortBy) {
+      switch (filters.sortBy) {
+        case 'price_low_high':
+          query = query.order('price', { ascending: true });
+          break;
+        case 'price_high_low':
+          query = query.order('price', { ascending: false });
+          break;
+        case 'newest':
+          query = query.order('created_at', { ascending: false });
+          break;
+        case 'oldest':
+          query = query.order('created_at', { ascending: true });
+          break;
+        case 'most_viewed':
+          query = query.order('views', { ascending: false });
+          break;
+        case 'area_low_high':
+          query = query.order('area', { ascending: true });
+          break;
+        case 'area_high_low':
+          query = query.order('area', { ascending: false });
+          break;
+        default:
+          query = query.order('created_at', { ascending: false });
+      }
+    }
+    
+    // Pagination
+    if (filters.limit) {
+      query = query.limit(filters.limit);
+    }
+    if (filters.offset) {
+      query = query.range(filters.offset, filters.offset + (filters.limit || 20) - 1);
+    }
     
     const { data, error } = await query;
     
@@ -649,6 +792,220 @@ export const getAllProperties = async (filters = {}) => {
     return { success: true, data };
   } catch (error) {
     console.error('Error getting all properties:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+// Get unique cities from properties for search suggestions
+export const getUniqueCities = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('properties')
+      .select('city')
+      .not('city', 'is', null)
+      .order('city');
+    
+    if (error) throw error;
+    
+    const uniqueCities = [...new Set(data.map(item => item.city))].filter(city => city);
+    return { success: true, data: uniqueCities };
+  } catch (error) {
+    console.error('Error getting unique cities:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+// Get unique localities from properties for search suggestions
+export const getUniqueLocalities = async (city = null) => {
+  try {
+    let query = supabase
+      .from('properties')
+      .select('locality')
+      .not('locality', 'is', null);
+    
+    if (city) {
+      query = query.eq('city', city);
+    }
+    
+    const { data, error } = await query.order('locality');
+    
+    if (error) throw error;
+    
+    const uniqueLocalities = [...new Set(data.map(item => item.locality))].filter(locality => locality);
+    return { success: true, data: uniqueLocalities };
+  } catch (error) {
+    console.error('Error getting unique localities:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+// Get property types with counts
+export const getPropertyTypesWithCounts = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('properties')
+      .select('property_type')
+      .eq('status', 'active');
+    
+    if (error) throw error;
+    
+    const typeCounts = {};
+    data.forEach(item => {
+      if (item.property_type) {
+        typeCounts[item.property_type] = (typeCounts[item.property_type] || 0) + 1;
+      }
+    });
+    
+    return { success: true, data: typeCounts };
+  } catch (error) {
+    console.error('Error getting property types with counts:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+// Get price ranges based on listing type
+export const getPriceRanges = async (listingType = 'sale') => {
+  try {
+    const { data, error } = await supabase
+      .from('properties')
+      .select('price')
+      .eq('type', listingType)
+      .eq('status', 'active')
+      .not('price', 'is', null)
+      .order('price');
+    
+    if (error) throw error;
+    
+    const prices = data.map(item => item.price);
+    const minPrice = Math.min(...prices);
+    const maxPrice = Math.max(...prices);
+    const avgPrice = prices.reduce((sum, price) => sum + price, 0) / prices.length;
+    
+    return { 
+      success: true, 
+      data: {
+        min: minPrice,
+        max: maxPrice,
+        average: avgPrice,
+        count: prices.length
+      }
+    };
+  } catch (error) {
+    console.error('Error getting price ranges:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+// Get available amenities from properties
+export const getAvailableAmenities = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('properties')
+      .select('amenities')
+      .not('amenities', 'is', null)
+      .eq('status', 'active');
+    
+    if (error) throw error;
+    
+    const allAmenities = new Set();
+    data.forEach(item => {
+      if (item.amenities && Array.isArray(item.amenities)) {
+        item.amenities.forEach(amenity => allAmenities.add(amenity));
+      }
+    });
+    
+    return { success: true, data: Array.from(allAmenities).sort() };
+  } catch (error) {
+    console.error('Error getting available amenities:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+// Search properties with autocomplete suggestions
+export const searchPropertiesWithSuggestions = async (query, limit = 10) => {
+  try {
+    if (!query || query.length < 2) {
+      return { success: true, data: [] };
+    }
+    
+    const { data, error } = await supabase
+      .from('properties')
+      .select('id, title, address, city, locality, price, property_type, images')
+      .or(`title.ilike.%${query}%,address.ilike.%${query}%,city.ilike.%${query}%,locality.ilike.%${query}%`)
+      .eq('status', 'active')
+      .limit(limit);
+    
+    if (error) throw error;
+    
+    return { success: true, data };
+  } catch (error) {
+    console.error('Error searching properties with suggestions:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+// Get search filters data (all filter options with counts)
+export const getSearchFiltersData = async () => {
+  try {
+    // Get all active properties for analysis
+    const { data: properties, error } = await supabase
+      .from('properties')
+      .select('*')
+      .eq('status', 'active');
+    
+    if (error) throw error;
+    
+    // Analyze data to create filter options
+    const cities = [...new Set(properties.map(p => p.city).filter(Boolean))].sort();
+    const localities = [...new Set(properties.map(p => p.locality).filter(Boolean))].sort();
+    const propertyTypes = [...new Set(properties.map(p => p.property_type).filter(Boolean))].sort();
+    const furnishingTypes = [...new Set(properties.map(p => p.furnishing).filter(Boolean))].sort();
+    const facingOptions = [...new Set(properties.map(p => p.facing).filter(Boolean))].sort();
+    
+    // Get all unique amenities
+    const allAmenities = new Set();
+    properties.forEach(p => {
+      if (p.amenities && Array.isArray(p.amenities)) {
+        p.amenities.forEach(amenity => allAmenities.add(amenity));
+      }
+    });
+    const amenities = Array.from(allAmenities).sort();
+    
+    // Calculate price ranges for sale and rent
+    const saleProperties = properties.filter(p => p.type === 'sale');
+    const rentProperties = properties.filter(p => p.type === 'rent');
+    
+    const salePrices = saleProperties.map(p => p.price).filter(Boolean).sort((a, b) => a - b);
+    const rentPrices = rentProperties.map(p => p.price).filter(Boolean).sort((a, b) => a - b);
+    
+    return {
+      success: true,
+      data: {
+        cities,
+        localities,
+        propertyTypes,
+        furnishingTypes,
+        facingOptions,
+        amenities,
+        priceRanges: {
+          sale: {
+            min: salePrices[0] || 0,
+            max: salePrices[salePrices.length - 1] || 0,
+            count: salePrices.length
+          },
+          rent: {
+            min: rentPrices[0] || 0,
+            max: rentPrices[rentPrices.length - 1] || 0,
+            count: rentPrices.length
+          }
+        },
+        totalProperties: properties.length,
+        saleCount: saleProperties.length,
+        rentCount: rentProperties.length
+      }
+    };
+  } catch (error) {
+    console.error('Error getting search filters data:', error);
     return { success: false, error: error.message };
   }
 };
@@ -899,10 +1256,24 @@ export const scheduleTour = async (tourData) => {
   try {
     console.log('📅 Scheduling tour:', tourData);
     
+    // First, let's check if the tours table exists by trying a simple query
+    try {
+      await supabase.from('tours').select('id').limit(1);
+    } catch (testError) {
+      console.warn('⚠️ Tours table test failed:', testError);
+      // If the test query fails, assume table doesn't exist
+      return { 
+        success: false, 
+        error: 'Tours functionality is not available. Please contact support to enable tour scheduling.',
+        code: 'TOURS_TABLE_MISSING'
+      };
+    }
+    
     const tour = {
       id: `tour_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       property_id: tourData.property_id,
       property_owner_id: tourData.property_owner_id,
+      visitor_user_id: tourData.visitor_user_id || null,
       visitor_name: tourData.visitor_name,
       visitor_email: tourData.visitor_email,
       visitor_phone: tourData.visitor_phone,
@@ -921,57 +1292,287 @@ export const scheduleTour = async (tourData) => {
       .select()
       .single();
     
-    if (error) throw error;
+    if (error) {
+      // Check if the error is due to missing table (various error conditions)
+      const errorMessage = error?.message || '';
+      const errorCode = error?.code;
+      const errorStatus = error?.status;
+      
+      if (errorMessage.includes('relation "public.tours" does not exist') || 
+          errorCode === 'PGRST106' || 
+          errorCode === '42P01' ||
+          errorMessage.includes('does not exist') ||
+          errorStatus === 404) {
+        console.warn('⚠️ Tours table does not exist. Please run the tours migration.');
+        return { 
+          success: false, 
+          error: 'Tours functionality is not available. Please contact support to enable tour scheduling.',
+          code: 'TOURS_TABLE_MISSING'
+        };
+      }
+      
+      // Check if this is an RLS policy violation
+      if (errorCode === '42501' || errorMessage.includes('row-level security policy')) {
+        console.warn('⚠️ Tours RLS policy violation. User may not be authenticated properly.');
+        return { 
+          success: false, 
+          error: 'Unable to schedule tour due to security restrictions. Please try logging in or contact support.',
+          code: 'TOURS_RLS_VIOLATION'
+        };
+      }
+      
+      throw error;
+    }
     
     console.log('✅ Tour scheduled successfully:', data);
     return { success: true, data };
   } catch (error) {
     console.error('❌ Error scheduling tour:', error);
-    return { success: false, error: error.message };
+    
+    // Check if this is a 404 error (table not found)
+    const errorMessage = error?.message || '';
+    const errorStatus = error?.status;
+    const errorCode = error?.code;
+    
+    if (errorStatus === 404 || 
+        errorMessage.includes('404') ||
+        errorMessage.includes('Not Found') ||
+        errorMessage.includes('does not exist')) {
+      console.warn('⚠️ Tours table does not exist (caught in catch block).');
+      return { 
+        success: false, 
+        error: 'Tours functionality is not available. Please contact support to enable tour scheduling.',
+        code: 'TOURS_TABLE_MISSING'
+      };
+    }
+    
+    // Check if this is an RLS policy violation
+    if (errorCode === '42501' || errorMessage.includes('row-level security policy')) {
+      console.warn('⚠️ Tours RLS policy violation (caught in catch block).');
+      return { 
+        success: false, 
+        error: 'Unable to schedule tour due to security restrictions. Please try logging in or contact support.',
+        code: 'TOURS_RLS_VIOLATION'
+      };
+    }
+    
+    return { success: false, error: errorMessage || 'An unknown error occurred' };
   }
 };
 
+// Get tours for property owners (tours scheduled on their properties)
 export const getUserTours = async (userId, filters = {}) => {
   try {
-    console.log('📋 Getting tours for user:', userId, 'with filters:', filters);
+    console.log('📋 Getting tours for property owner:', userId, 'with filters:', filters);
     
     let query = supabase
       .from('tours')
-      .select(`
-        *,
-        properties (
-          id,
-          title,
-          address,
-          city,
-          images,
-          price,
-          property_type
-        )
-      `)
+      .select('*')
       .eq('property_owner_id', userId)
-      .order('tour_datetime', { ascending: true });
+      .order('tour_date', { ascending: true })
+      .order('tour_time', { ascending: true });
     
     if (filters.status) {
       query = query.eq('status', filters.status);
     }
     
     if (filters.upcoming) {
-      query = query.gte('tour_datetime', new Date().toISOString());
+      const today = new Date().toISOString().split('T')[0];
+      query = query.gte('tour_date', today);
     }
     
     if (filters.limit) {
       query = query.limit(filters.limit);
     }
     
-    const { data, error } = await query;
+    const { data: tours, error } = await query;
     
     if (error) throw error;
     
-    console.log('✅ Tours fetched successfully:', data);
-    return { success: true, data };
+    // Manually fetch property details for each tour
+    const toursWithProperties = await Promise.all(
+      tours.map(async (tour) => {
+        try {
+          const { data: property, error: propError } = await supabase
+            .from('properties')
+            .select('id, title, address, city, images, price, property_type')
+            .eq('id', tour.property_id)
+            .single();
+          
+          return {
+            ...tour,
+            property: propError ? null : property
+          };
+        } catch (propError) {
+          console.warn('Could not fetch property for tour:', tour.id);
+          return {
+            ...tour,
+            property: null
+          };
+        }
+      })
+    );
+    
+    console.log('✅ Tours fetched successfully:', toursWithProperties);
+    return { success: true, data: toursWithProperties };
   } catch (error) {
     console.error('❌ Error getting user tours:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+// Get tours that a user has scheduled as a visitor (user-oriented) - by email
+export const getUserScheduledTours = async (userEmail, filters = {}) => {
+  try {
+    console.log('📋 Getting scheduled tours for user email:', userEmail, 'with filters:', filters);
+    
+    let query = supabase
+      .from('tours')
+      .select('*')
+      .eq('visitor_email', userEmail)
+      .order('tour_date', { ascending: true })
+      .order('tour_time', { ascending: true });
+    
+    if (filters.status) {
+      query = query.eq('status', filters.status);
+    }
+    
+    if (filters.upcoming) {
+      const today = new Date().toISOString().split('T')[0];
+      query = query.gte('tour_date', today);
+    }
+    
+    if (filters.limit) {
+      query = query.limit(filters.limit);
+    }
+    
+    const { data: tours, error } = await query;
+    
+    if (error) {
+      // Handle case where tours table doesn't exist
+      if (error.message?.includes('does not exist') || error.code === 'PGRST106') {
+        console.warn('⚠️ Tours table does not exist');
+        return { success: true, data: [] };
+      }
+      throw error;
+    }
+    
+    // Manually fetch property details and owner info for each tour
+    const toursWithProperties = await Promise.all(
+      tours.map(async (tour) => {
+        try {
+          const { data: property, error: propError } = await supabase
+            .from('properties')
+            .select(`
+              id, title, address, city, images, price, property_type, user_id,
+              users (name, phone, email, company)
+            `)
+            .eq('id', tour.property_id)
+            .single();
+          
+          return {
+            ...tour,
+            properties: propError ? null : property
+          };
+        } catch (propError) {
+          console.warn('Could not fetch property for tour:', tour.id);
+          return {
+            ...tour,
+            properties: null
+          };
+        }
+      })
+    );
+    
+    console.log('✅ User scheduled tours fetched successfully:', toursWithProperties);
+    return { success: true, data: toursWithProperties };
+  } catch (error) {
+    console.error('❌ Error getting user scheduled tours:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+// Get tours that a user has scheduled as a visitor (user-oriented) - by user ID
+export const getUserScheduledToursByUserId = async (userId, filters = {}) => {
+  try {
+    console.log('📋 Getting scheduled tours for user ID:', userId, 'with filters:', filters);
+    
+    let query = supabase
+      .from('tours')
+      .select('*')
+      .eq('visitor_user_id', userId)
+      .order('tour_date', { ascending: true })
+      .order('tour_time', { ascending: true });
+    
+    if (filters.status) {
+      query = query.eq('status', filters.status);
+    }
+    
+    if (filters.upcoming) {
+      const today = new Date().toISOString().split('T')[0];
+      query = query.gte('tour_date', today);
+    }
+    
+    if (filters.limit) {
+      query = query.limit(filters.limit);
+    }
+    
+    const { data: tours, error } = await query;
+    
+    if (error) {
+      // Handle case where tours table doesn't exist
+      if (error.message?.includes('does not exist') || error.code === 'PGRST106') {
+        console.warn('⚠️ Tours table does not exist');
+        return { success: true, data: [] };
+      }
+      
+      // Handle case where visitor_user_id column doesn't exist yet
+      if (error.message?.includes('visitor_user_id') || error.code === 'PGRST204') {
+        console.warn('⚠️ visitor_user_id column does not exist yet, returning empty result');
+        return { success: true, data: [] };
+      }
+      
+      throw error;
+    }
+    
+    // Manually fetch property details and owner info for each tour
+    const toursWithProperties = await Promise.all(
+      tours.map(async (tour) => {
+        try {
+          const { data: property, error: propError } = await supabase
+            .from('properties')
+            .select(`
+              id, title, address, city, images, price, property_type, user_id,
+              users (name, phone, email, company)
+            `)
+            .eq('id', tour.property_id)
+            .single();
+          
+          return {
+            ...tour,
+            properties: propError ? null : property
+          };
+        } catch (propError) {
+          console.warn('Could not fetch property for tour:', tour.id);
+          return {
+            ...tour,
+            properties: null
+          };
+        }
+      })
+    );
+    
+    console.log('✅ User scheduled tours by ID fetched successfully:', toursWithProperties);
+    return { success: true, data: toursWithProperties };
+  } catch (error) {
+    console.error('❌ Error getting user scheduled tours by ID:', error);
+    
+    // Handle case where visitor_user_id column doesn't exist yet
+    if (error.message?.includes('visitor_user_id') || error.code === 'PGRST204') {
+      console.warn('⚠️ visitor_user_id column does not exist yet, returning empty result');
+      return { success: true, data: [] };
+    }
+    
     return { success: false, error: error.message };
   }
 };
@@ -984,14 +1585,6 @@ export const updateTourStatus = async (tourId, status, userId) => {
       status,
       updated_at: new Date().toISOString()
     };
-    
-    if (status === 'confirmed') {
-      updates.confirmed_at = new Date().toISOString();
-    } else if (status === 'cancelled') {
-      updates.cancelled_at = new Date().toISOString();
-    } else if (status === 'completed') {
-      updates.completed_at = new Date().toISOString();
-    }
     
     const { data, error } = await supabase
       .from('tours')
@@ -1587,19 +2180,107 @@ export const getPropertyViews = async (propertyId, limit = 10) => {
   try {
     console.log('👁️ Getting property views for:', propertyId);
     
-    const { data, error } = await supabase
+    // Use the database function to get comprehensive view analytics
+    const { data: analytics, error: analyticsError } = await supabase
+      .rpc('get_property_view_analytics', { 
+        prop_id: propertyId, 
+        days_back: 30 
+      });
+    
+    if (analyticsError) {
+      console.error('❌ Error getting view analytics:', analyticsError);
+      // Fallback to manual calculation
+      return await getPropertyViewsManual(propertyId, limit);
+    }
+    
+    // Get recent views for display
+    const { data: recentViews, error: recentError } = await supabase
       .from('property_views')
       .select('*')
       .eq('property_id', propertyId)
       .order('viewed_at', { ascending: false })
       .limit(limit);
     
-    if (error) throw error;
+    if (recentError) {
+      console.error('❌ Error getting recent views:', recentError);
+    }
     
-    console.log('✅ Property views fetched successfully');
-    return { success: true, data };
+    const result = {
+      total_views: analytics?.[0]?.total_views || 0,
+      unique_views: analytics?.[0]?.unique_views || 0,
+      views_today: analytics?.[0]?.views_today || 0,
+      this_week_views: analytics?.[0]?.views_this_week || 0,
+      last_week_views: Math.max(0, (analytics?.[0]?.views_this_month || 0) - (analytics?.[0]?.views_this_week || 0)),
+      views_this_month: analytics?.[0]?.views_this_month || 0,
+      recent_views: recentViews || []
+    };
+    
+    console.log('✅ Property views fetched successfully:', result);
+    return { success: true, data: result };
   } catch (error) {
     console.error('❌ Error getting property views:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+// Fallback manual calculation if RPC function fails
+const getPropertyViewsManual = async (propertyId, limit = 10) => {
+  try {
+    // Get all views for this property
+    const { data: allViews, error } = await supabase
+      .from('property_views')
+      .select('*')
+      .eq('property_id', propertyId)
+      .order('viewed_at', { ascending: false });
+    
+    if (error) throw error;
+    
+    // Get recent views (limited)
+    const { data: recentViews, error: recentError } = await supabase
+      .from('property_views')
+      .select('*')
+      .eq('property_id', propertyId)
+      .order('viewed_at', { ascending: false })
+      .limit(limit);
+    
+    if (recentError) throw recentError;
+    
+    // Calculate analytics
+    const now = new Date();
+    const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const thisWeekViews = allViews.filter(view => 
+      new Date(view.viewed_at) >= oneWeekAgo
+    ).length;
+    
+    const lastWeekViews = allViews.filter(view => {
+      const viewDate = new Date(view.viewed_at);
+      return viewDate >= twoWeeksAgo && viewDate < oneWeekAgo;
+    }).length;
+    
+    const todayViews = allViews.filter(view => 
+      new Date(view.viewed_at) >= today
+    ).length;
+    
+    const uniqueUsers = new Set(allViews.filter(v => v.user_id).map(v => v.user_id)).size;
+    
+    const result = {
+      total_views: allViews.length,
+      unique_views: uniqueUsers,
+      views_today: todayViews,
+      this_week_views: thisWeekViews,
+      last_week_views: lastWeekViews,
+      views_this_month: allViews.length, // Simplified for fallback
+      recent_views: recentViews
+    };
+    
+    console.log('✅ Property views fetched successfully (manual):', result);
+    return { success: true, data: result };
+  } catch (error) {
+    console.error('❌ Error getting property views manually:', error);
     return { success: false, error: error.message };
   }
 };

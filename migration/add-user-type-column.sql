@@ -1,5 +1,6 @@
+-- cspell:ignore Supabase
 -- Migration script to add user_type column to existing users table
--- Run this SQL in your Supabase SQL Editor after updating the schema
+-- Run this SQL in your database's SQL Editor after updating the schema
 
 -- Add user_type column if it doesn't exist
 DO $$ 

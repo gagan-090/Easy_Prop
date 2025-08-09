@@ -16,9 +16,6 @@ CREATE TABLE IF NOT EXISTS tours (
     -- Tour Details
     tour_date DATE NOT NULL,
     tour_time TIME NOT NULL,
-    tour_datetime TIMESTAMPTZ GENERATED ALWAYS AS (
-        (tour_date::text || ' ' || tour_time::text)::timestamptz
-    ) STORED,
     
     -- Status Management
     status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'cancelled', 'completed', 'no_show')),
@@ -140,7 +137,7 @@ CREATE INDEX IF NOT EXISTS idx_tours_property_id ON tours(property_id);
 CREATE INDEX IF NOT EXISTS idx_tours_property_owner_id ON tours(property_owner_id);
 CREATE INDEX IF NOT EXISTS idx_tours_status ON tours(status);
 CREATE INDEX IF NOT EXISTS idx_tours_tour_date ON tours(tour_date);
-CREATE INDEX IF NOT EXISTS idx_tours_tour_datetime ON tours(tour_datetime);
+-- Removed tour_datetime index since we removed the generated column
 CREATE INDEX IF NOT EXISTS idx_tours_visitor_email ON tours(visitor_email);
 CREATE INDEX IF NOT EXISTS idx_tours_created_at ON tours(created_at);
 
@@ -205,7 +202,7 @@ CREATE OR REPLACE FUNCTION get_available_tour_slots(
 )
 RETURNS TABLE (
     date DATE,
-    time TIME,
+    "time" TIME,
     available BOOLEAN,
     booked_count INTEGER
 ) AS $$
@@ -228,7 +225,7 @@ BEGIN
                 ta.start_time,
                 ta.end_time - (ta.slot_duration_minutes || ' minutes')::INTERVAL,
                 (ta.slot_duration_minutes + ta.buffer_time_minutes || ' minutes')::INTERVAL
-            )::TIME as time,
+            )::TIME as "time",
             ta.max_tours_per_slot
         FROM date_series ds
         CROSS JOIN tour_availability ta
@@ -243,7 +240,7 @@ BEGIN
     booked_slots AS (
         SELECT 
             tour_date as date,
-            tour_time as time,
+            tour_time as "time",
             COUNT(*) as booked_count
         FROM tours
         WHERE property_id = prop_id
@@ -252,12 +249,12 @@ BEGIN
     )
     SELECT 
         as_slots.date,
-        as_slots.time,
+        as_slots."time",
         COALESCE(bs.booked_count, 0) < as_slots.max_tours_per_slot as available,
         COALESCE(bs.booked_count, 0) as booked_count
     FROM available_slots as_slots
-    LEFT JOIN booked_slots bs ON as_slots.date = bs.date AND as_slots.time = bs.time
-    ORDER BY as_slots.date, as_slots.time;
+    LEFT JOIN booked_slots bs ON as_slots.date = bs.date AND as_slots."time" = bs."time"
+    ORDER BY as_slots.date, as_slots."time";
 END;
 $$ LANGUAGE plpgsql;
 
@@ -288,7 +285,7 @@ BEGIN
         COUNT(*) FILTER (WHERE created_at >= date_trunc('month', CURRENT_DATE))::INTEGER as tours_this_month,
         COUNT(*) FILTER (WHERE created_at >= date_trunc('week', CURRENT_DATE))::INTEGER as tours_this_week,
         COUNT(*) FILTER (WHERE tour_date = CURRENT_DATE)::INTEGER as tours_today,
-        COUNT(*) FILTER (WHERE tour_datetime > NOW() AND status IN ('pending', 'confirmed'))::INTEGER as upcoming_tours,
+        COUNT(*) FILTER (WHERE (tour_date + tour_time) > NOW() AND status IN ('pending', 'confirmed'))::INTEGER as upcoming_tours,
         CASE 
             WHEN COUNT(*) FILTER (WHERE status IN ('completed', 'no_show')) > 0 
             THEN (COUNT(*) FILTER (WHERE status = 'completed')::DECIMAL / COUNT(*) FILTER (WHERE status IN ('completed', 'no_show'))::DECIMAL * 100)
@@ -326,16 +323,16 @@ BEGIN
         t.visitor_phone,
         t.tour_date,
         t.tour_time,
-        t.tour_datetime,
+        (t.tour_date + t.tour_time) as tour_datetime,
         t.status,
         t.visitor_message,
         t.created_at
     FROM tours t
     JOIN properties p ON t.property_id = p.id
     WHERE t.property_owner_id = user_id_param
-    AND t.tour_datetime > NOW()
+    AND (t.tour_date + t.tour_time) > NOW()
     AND t.status IN ('pending', 'confirmed')
-    ORDER BY t.tour_datetime ASC
+    ORDER BY (t.tour_date + t.tour_time) ASC
     LIMIT limit_param;
 END;
 $$ LANGUAGE plpgsql;

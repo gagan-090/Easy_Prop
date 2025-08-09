@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
+import ProfilePhotoUpload from '../components/ProfilePhotoUpload';
 import { 
   Home, 
   Plus, 
@@ -153,9 +154,10 @@ const DashboardLayout = () => {
               <div className="flex-shrink-0 border-t border-gray-200 dark:border-gray-700 p-4">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <div className="h-8 w-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                      <User className="h-4 w-4 text-white" />
-                    </div>
+                    <ProfilePhotoUpload 
+                      currentPhotoUrl={user?.photoURL}
+                      size="small"
+                    />
                   </div>
                   <div className="ml-3">
                     <p className="text-sm font-medium text-gray-700 dark:text-gray-200">{user?.name || 'John Doe'}</p>
@@ -249,9 +251,10 @@ const DashboardLayout = () => {
               className="flex items-center bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-700 dark:to-gray-600 rounded-xl p-3"
             >
               <div className="flex-shrink-0">
-                <div className="h-10 w-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                  <User className="h-5 w-5 text-white" />
-                </div>
+                <ProfilePhotoUpload 
+                  currentPhotoUrl={user?.photoURL}
+                  size="medium"
+                />
               </div>
               <div className="ml-3 flex-1">
                 <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">
@@ -385,9 +388,10 @@ const DashboardLayout = () => {
                     onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
                     className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                   >
-                    <div className="h-8 w-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                      <User className="h-4 w-4 text-white" />
-                    </div>
+                    <ProfilePhotoUpload 
+                      currentPhotoUrl={user?.photoURL}
+                      size="small"
+                    />
                     <ChevronDown className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                   </motion.button>
 
