@@ -286,25 +286,33 @@ const Home = () => {
                 <div className="text-xl md:text-3xl font-bold text-blue-600 mb-1 md:mb-2 heartbeat">
                   {stats.propertiesListed}
                 </div>
-                <div className="text-xs md:text-sm text-slate-600">Properties Listed</div>
+                <div className="text-xs md:text-sm text-white">
+                  Properties Listed
+                </div>
               </div>
               <div className="text-center glass-morphism p-3 md:p-6 rounded-xl md:rounded-2xl hover-lift interactive-button">
                 <div className="text-xl md:text-3xl font-bold text-purple-600 mb-1 md:mb-2 wave-animation">
                   {stats.happyCustomers}
                 </div>
-                <div className="text-xs md:text-sm text-slate-600">Happy Customers</div>
+                <div className="text-xs md:text-sm text-white">
+                  Happy Customers
+                </div>
               </div>
               <div className="text-center glass-morphism p-3 md:p-6 rounded-xl md:rounded-2xl hover-lift interactive-button">
                 <div className="text-xl md:text-3xl font-bold text-pink-600 mb-1 md:mb-2 breathing">
                   {stats.expertAgents}
                 </div>
-                <div className="text-xs md:text-sm text-slate-600">Expert Agents</div>
+                <div className="text-xs md:text-sm text-white">
+                  Expert Agents
+                </div>
               </div>
               <div className="text-center glass-morphism p-3 md:p-6 rounded-xl md:rounded-2xl hover-lift interactive-button">
                 <div className="text-xl md:text-3xl font-bold text-green-600 mb-1 md:mb-2 levitate">
                   {stats.citiesCovered}
                 </div>
-                <div className="text-xs md:text-sm text-slate-600">Cities Covered</div>
+                <div className="text-xs md:text-sm text-white">
+                  Cities Covered
+                </div>
               </div>
             </div>
           </div>
@@ -353,7 +361,9 @@ const Home = () => {
                           </div>
                           <div className="flex items-center space-x-1">
                             <MapPin className="h-4 w-4" />
-                            <span className="truncate">{featuredProperty.address}</span>
+                            <span className="truncate">
+                              {featuredProperty.address}
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -386,7 +396,9 @@ const Home = () => {
                           <div className="text-2xl md:text-3xl font-bold text-slate-900 mb-1">
                             {featuredProperty.bedrooms}
                           </div>
-                          <div className="text-xs md:text-sm text-slate-600">Bedrooms</div>
+                          <div className="text-xs md:text-sm text-slate-600">
+                            Bedrooms
+                          </div>
                         </div>
                         <div className="text-center p-3 md:p-4 bg-slate-50 rounded-xl">
                           <div className="text-2xl md:text-3xl font-bold text-slate-900 mb-1">
@@ -400,7 +412,9 @@ const Home = () => {
                           <div className="text-2xl md:text-3xl font-bold text-slate-900 mb-1">
                             {featuredProperty.area.toLocaleString()}
                           </div>
-                          <div className="text-xs md:text-sm text-slate-600">Sq Ft</div>
+                          <div className="text-xs md:text-sm text-slate-600">
+                            Sq Ft
+                          </div>
                         </div>
                       </div>
 
@@ -502,7 +516,10 @@ const Home = () => {
           <div className="md:hidden">
             <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory mobile-scroll px-4">
               {popularProperties.map((property) => (
-                <div key={property.id} className="flex-none w-72 snap-start property-card-mobile">
+                <div
+                  key={property.id}
+                  className="flex-none w-72 snap-start property-card-mobile"
+                >
                   <PropertyCard
                     property={property}
                     onFavorite={(id) => console.log("Favorite clicked:", id)}
@@ -641,7 +658,10 @@ const Home = () => {
           <div className="overflow-hidden">
             <div className="flex space-x-4 md:space-x-6 pb-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory mobile-scroll px-4 md:px-0">
               {popularProperties.slice(0, 4).map((property, index) => (
-                <div key={property.id} className="flex-none w-72 md:w-80 snap-start property-card-mobile md:property-card-desktop">
+                <div
+                  key={property.id}
+                  className="flex-none w-72 md:w-80 snap-start property-card-mobile md:property-card-desktop"
+                >
                   <div className="property-card-enhanced group">
                     <div className="relative overflow-hidden rounded-t-2xl">
                       <img
@@ -1028,7 +1048,10 @@ const Home = () => {
           <div className="overflow-hidden">
             <div className="flex space-x-4 md:space-x-6 pb-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory mobile-scroll px-4 md:px-0">
               {recentProperties.map((property) => (
-                <div key={property.id} className="flex-none w-64 md:w-72 snap-start property-card-mobile md:property-card-desktop">
+                <div
+                  key={property.id}
+                  className="flex-none w-64 md:w-72 snap-start property-card-mobile md:property-card-desktop"
+                >
                   <div className="property-card-enhanced group bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300">
                     <div className="relative overflow-hidden rounded-t-2xl">
                       <img
@@ -1423,28 +1446,6 @@ const Home = () => {
           </div>
         </div>
       </section>
-
-      {/* Floating WhatsApp Button */}
-      <div className="fixed bottom-8 right-8 z-50">
-        <div className="relative group">
-          <button className="w-16 h-16 bg-green-500 hover:bg-green-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center hover:scale-110 energy-pulse">
-            <MessageCircle className="h-8 w-8" />
-          </button>
-          <div className="absolute bottom-full right-0 mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-            <div className="bg-slate-900 text-white text-sm px-3 py-2 rounded-lg whitespace-nowrap">
-              Chat with us on WhatsApp
-              <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-slate-900"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Floating Chat Button */}
-      <div className="fixed bottom-8 right-28 z-50">
-        <button className="w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center hover:scale-110">
-          <MessageCircle className="h-6 w-6" />
-        </button>
-      </div>
 
       {/* Enhanced Search Filter Modal */}
       {isSearchModalOpen && (

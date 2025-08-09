@@ -512,7 +512,7 @@ const ModernSearchFilter = ({
       <form onSubmit={handleSearch} className="relative">
         <div className={`flex flex-col md:flex-row items-stretch ${themeClasses.container} backdrop-blur-md rounded-2xl md:rounded-3xl shadow-2xl border overflow-hidden transition-all duration-300`}>
           
-          {/* Main Search Input */}
+          {/* Main Search Input with integrated controls */}
           <div className="flex-1 flex items-center px-4 md:px-6 py-3 md:py-5 relative">
             <Search className={`h-5 md:h-6 w-5 md:w-6 mr-3 md:mr-4 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} />
             <input
@@ -529,16 +529,43 @@ const ModernSearchFilter = ({
             {loading && (
               <Loader2 className="h-4 md:h-5 w-4 md:w-5 text-gray-400 animate-spin mr-2" />
             )}
+            
+            {/* Mobile: Filter and Search icons inside search bar */}
+            <div className="md:hidden flex items-center space-x-2">
+              {/* Filter Button */}
+              <button
+                type="button"
+                onClick={handleToggleDropdown}
+                className={`p-2 rounded-lg ${darkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'} transition-colors relative`}
+                aria-label="Toggle filters"
+              >
+                <Filter className={`h-5 w-5 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`} />
+                {activeFiltersCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center font-bold">
+                    {activeFiltersCount}
+                  </span>
+                )}
+              </button>
+              
+              {/* Search Button */}
+              <button
+                type="submit"
+                className="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                aria-label="Search"
+              >
+                <Search className="h-5 w-5" />
+              </button>
+            </div>
           </div>
 
-          {/* Mobile Controls Row */}
-          <div className="flex items-stretch border-t md:border-t-0 md:border-l border-gray-200 dark:border-gray-700">
-            {/* Dark Mode Toggle - Hidden on mobile */}
+          {/* Desktop Controls Row */}
+          <div className="hidden md:flex items-stretch border-l border-gray-200 dark:border-gray-700">
+            {/* Dark Mode Toggle */}
             {onDarkModeToggle && (
               <button
                 type="button"
                 onClick={onDarkModeToggle}
-                className={`hidden md:flex items-center px-4 py-5 border-r ${darkMode ? 'border-gray-700 hover:bg-gray-800' : 'border-gray-200 hover:bg-gray-50'} transition-colors`}
+                className={`flex items-center px-4 py-5 border-r ${darkMode ? 'border-gray-700 hover:bg-gray-800' : 'border-gray-200 hover:bg-gray-50'} transition-colors`}
                 aria-label="Toggle dark mode"
               >
                 {darkMode ? (
@@ -553,21 +580,21 @@ const ModernSearchFilter = ({
             <button
               type="button"
               onClick={handleToggleDropdown}
-              className={`flex items-center px-4 md:px-6 py-3 md:py-5 border-r border-gray-200 dark:border-gray-700 ${darkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'} transition-all duration-200`}
+              className={`flex items-center px-6 py-5 border-r border-gray-200 dark:border-gray-700 ${darkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'} transition-all duration-200`}
               aria-label="Toggle filters"
               aria-expanded={isOpen}
             >
-              <Filter className={`h-4 md:h-5 w-4 md:w-5 mr-2 md:mr-3 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`} />
-              <span className={`font-semibold text-sm md:text-base ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+              <Filter className={`h-5 w-5 mr-3 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`} />
+              <span className={`font-semibold ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
                 Filters
               </span>
               {activeFiltersCount > 0 && (
-                <span className="ml-2 md:ml-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white text-xs rounded-full h-5 w-5 md:h-6 md:w-6 flex items-center justify-center font-bold animate-pulse">
+                <span className="ml-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center font-bold animate-pulse">
                   {activeFiltersCount}
                 </span>
               )}
               <ChevronDown
-                className={`h-3 md:h-4 w-3 md:w-4 ml-2 md:ml-3 transition-transform duration-200 ${
+                className={`h-4 w-4 ml-3 transition-transform duration-200 ${
                   isOpen ? "rotate-180" : ""
                 } ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}
               />
@@ -576,9 +603,9 @@ const ModernSearchFilter = ({
             {/* Enhanced Search Button */}
             <button
               type="submit"
-              className="flex-1 md:flex-none px-4 md:px-8 py-3 md:py-5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold text-sm md:text-lg transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center justify-center"
+              className="px-8 py-5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold text-lg transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center justify-center"
             >
-              <Search className="h-4 md:h-5 w-4 md:w-5 mr-1 md:mr-2" />
+              <Search className="h-5 w-5 mr-2" />
               <span>Search</span>
             </button>
           </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
@@ -67,6 +67,7 @@ const Navbar = () => {
   const { user, logout, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const navbarRef = useRef(null);
 
   // Load dynamic filter data from backend
   useEffect(() => {
@@ -109,6 +110,30 @@ const Navbar = () => {
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, [lastScrollY]);
+
+  // Close mobile menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (navbarRef.current && !navbarRef.current.contains(event.target) && isOpen) {
+        setIsOpen(false);
+      }
+    };
+
+    const handleEscapeKey = (event) => {
+      if (event.key === 'Escape' && isOpen) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleEscapeKey);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+        document.removeEventListener('keydown', handleEscapeKey);
+      };
+    }
+  }, [isOpen]);
 
   const handleLogout = () => {
     logout();
@@ -328,6 +353,7 @@ const Navbar = () => {
 
   return (
     <motion.nav
+      ref={navbarRef}
       initial={{ y: -100 }}
       animate={{ 
         y: isVisible ? 0 : -100,
@@ -802,222 +828,132 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Mobile Menu */}
-      <AnimatePresence>
-        {isOpen && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="lg:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
-              onClick={() => setIsOpen(false)}
-            />
+      {/* Mobile Menu - Attached to navbar, expands downward */}
+      {isOpen && (
+        <div className="lg:hidden bg-white border-t border-gray-200 rounded-b-2xl shadow-lg max-h-[50vh] overflow-y-auto">
+          {/* Menu Content */}
+          <div className="px-6 py-4">
+            {/* Navigation Items */}
+            <div className="space-y-1">
+              <Link
+                to="/properties?listingType=sale"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center space-x-3 py-3 px-4 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg font-medium"
+              >
+                <Building className="h-5 w-5" />
+                <span>Buy Properties</span>
+              </Link>
+              
+              <Link
+                to="/properties?listingType=rent"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center space-x-3 py-3 px-4 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg font-medium"
+              >
+                <Building2 className="h-5 w-5" />
+                <span>Rent Properties</span>
+              </Link>
+              
+              <Link
+                to="/properties?propertyType=commercial"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center space-x-3 py-3 px-4 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg font-medium"
+              >
+                <Briefcase className="h-5 w-5" />
+                <span>Commercial</span>
+              </Link>
+              
+              <Link
+                to="/about"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center space-x-3 py-3 px-4 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg font-medium"
+              >
+                <Info className="h-5 w-5" />
+                <span>About</span>
+              </Link>
+              
+              <Link
+                to="/contact"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center space-x-3 py-3 px-4 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg font-medium"
+              >
+                <Phone className="h-5 w-5" />
+                <span>Contact</span>
+              </Link>
+              
+              {/* More menu items */}
+              <Link
+                to="/properties"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center space-x-3 py-3 px-4 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg font-medium"
+              >
+                <Home className="h-5 w-5" />
+                <span>All Properties</span>
+              </Link>
+              
+              <Link
+                to="/emi-calculator"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center space-x-3 py-3 px-4 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg font-medium"
+              >
+                <Building className="h-5 w-5" />
+                <span>EMI Calculator</span>
+              </Link>
+            </div>
             
-            {/* Half Screen Mobile Menu */}
-            <motion.div
-              initial={{ opacity: 0, y: '100%' }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: '100%' }}
-              transition={{ duration: 0.3, ease: "easeInOut" }}
-              className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/98 dark:bg-gray-900/98 backdrop-blur-xl rounded-t-3xl shadow-2xl border-t border-gray-200 dark:border-gray-700"
-              style={{ maxHeight: '60vh' }}
-            >
-              {/* Handle Bar */}
-              <div className="flex justify-center py-3">
-                <div className="w-12 h-1 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
-              </div>
-              
-              {/* Scrollable Content */}
-              <div className="overflow-y-auto px-6 pb-6" style={{ maxHeight: 'calc(60vh - 60px)' }}>
-                <div className="space-y-2">
-              {navItems.map((item, index) => (
-                <motion.div
-                  key={item.name}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="space-y-2"
-                >
-                  {/* Main Navigation Item */}
-                  <div className="flex items-center space-x-3 py-3 px-4 text-gray-700 dark:text-gray-300 font-medium">
-                    <item.icon className="h-5 w-5" />
-                    <span>{item.name}</span>
-                  </div>
-                  
-                  {/* Mobile Dropdown Content */}
-                  {item.hasDropdown && (
-                    <div className="pl-8 space-y-1">
-                      {/* Property Types */}
-                      {item.filters.propertyTypes?.slice(0, 3).map((type, idx) => (
-                        <motion.div
-                          key={type.value}
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: 0.1 + idx * 0.05 }}
-                          whileHover={{ x: 4 }}
-                        >
-                          <Link
-                            to={generatePropertyUrl({ 
-                              listingType: item.name.toLowerCase() === 'buy' ? 'sale' : item.name.toLowerCase(),
-                              propertyType: type.value 
-                            })}
-                            onClick={() => setIsOpen(false)}
-                            className="flex items-center space-x-2 py-2 px-3 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors duration-200"
-                          >
-                            <type.icon className="h-4 w-4" />
-                            <span className="text-sm">{type.name}</span>
-                          </Link>
-                        </motion.div>
-                      ))}
-                      
-                      {/* Quick Filters */}
-                      {item.filters.quickFilters?.slice(0, 2).map((filter, idx) => (
-                        <motion.div
-                          key={filter.name}
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: 0.2 + idx * 0.05 }}
-                          whileHover={{ x: 4 }}
-                        >
-                          <Link
-                            to={generatePropertyUrl({ 
-                              listingType: item.name.toLowerCase() === 'buy' ? 'sale' : item.name.toLowerCase(),
-                              [filter.param]: filter.value 
-                            })}
-                            onClick={() => setIsOpen(false)}
-                            className="block py-1 px-3 text-sm text-gray-500 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200"
-                          >
-                            {filter.name}
-                          </Link>
-                        </motion.div>
-                      ))}
-                      
-                      {/* View All Link */}
-                      <motion.div
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.3 }}
-                        whileHover={{ x: 4 }}
-                      >
-                        <Link
-                          to={generatePropertyUrl({ 
-                            listingType: item.name.toLowerCase() === 'buy' ? 'sale' : item.name.toLowerCase()
-                          })}
-                          onClick={() => setIsOpen(false)}
-                          className="block py-2 px-3 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors duration-200"
-                        >
-                          View All {item.name} →
-                        </Link>
-                      </motion.div>
-                    </div>
-                  )}
-                </motion.div>
-              ))}
-              
-              {/* Additional Navigation Items */}
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.5 }}
-                whileHover={{ x: 4 }}
-              >
-                <Link
-                  to="/about"
-                  onClick={() => setIsOpen(false)}
-                  className="flex items-center space-x-3 py-3 px-4 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-200 font-medium"
-                >
-                  <Info className="h-5 w-5" />
-                  <span>About</span>
-                </Link>
-              </motion.div>
-              
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.6 }}
-                whileHover={{ x: 4 }}
-              >
-                <Link
-                  to="/contact"
-                  onClick={() => setIsOpen(false)}
-                  className="flex items-center space-x-3 py-3 px-4 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-200 font-medium"
-                >
-                  <Phone className="h-5 w-5" />
-                  <span>Contact</span>
-                </Link>
-              </motion.div>
-              
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.8 }}
-                className="border-t border-gray-200 dark:border-gray-700 pt-4 space-y-2"
-              >
-                {isAuthenticated ? (
-                  <>
-                    <Link
-                      to="/profile"
-                      onClick={() => setIsOpen(false)}
-                      className="flex items-center space-x-3 py-3 px-4 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-200 font-medium"
-                    >
-                      <User className="h-5 w-5" />
-                      <span>Profile</span>
-                    </Link>
-                    <Link
-                      to="/dashboard"
-                      onClick={() => setIsOpen(false)}
-                      className="flex items-center space-x-3 py-3 px-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-medium"
-                    >
-                      <Building className="h-5 w-5" />
-                      <span>Dashboard</span>
-                    </Link>
-                    <div className="flex items-center space-x-3 py-3 px-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
-                      <ProfilePhotoUpload 
-                        currentPhotoUrl={user?.photoURL}
-                        size="small"
-                      />
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Welcome, {user?.name}
-                      </span>
-                    </div>
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={handleLogout}
-                      className="flex items-center space-x-3 w-full py-3 px-4 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all duration-200 font-medium"
-                    >
-                      <LogOut className="h-5 w-5" />
-                      <span>Logout</span>
-                    </motion.button>
-                  </>
-                ) : (
-                  <>
-                    <Link
-                      to="/login"
-                      onClick={() => setIsOpen(false)}
-                      className="flex items-center justify-center py-3 px-4 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-200 font-medium"
-                    >
-                      Log in
-                    </Link>
-                    <Link
-                      to="/register"
-                      onClick={() => setIsOpen(false)}
-                      className="flex items-center justify-center py-3 px-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-medium"
-                    >
-                      Sign up
-                    </Link>
-                  </>
-                )}
-              </motion.div>
-                </div>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+            {/* Auth Section */}
+            <div className="border-t border-gray-200 mt-4 pt-4 space-y-2">
+              {isAuthenticated ? (
+                <>
+                  <Link
+                    to="/profile"
+                    onClick={() => setIsOpen(false)}
+                    className="flex items-center space-x-3 py-3 px-4 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg font-medium"
+                  >
+                    <User className="h-5 w-5" />
+                    <span>Profile</span>
+                  </Link>
+                  <Link
+                    to="/dashboard"
+                    onClick={() => setIsOpen(false)}
+                    className="flex items-center space-x-3 py-3 px-4 bg-blue-600 text-white rounded-lg font-medium"
+                  >
+                    <Building className="h-5 w-5" />
+                    <span>Dashboard</span>
+                  </Link>
+                  <button
+                    onClick={() => {
+                      handleLogout();
+                      setIsOpen(false);
+                    }}
+                    className="flex items-center space-x-3 w-full py-3 px-4 text-red-600 hover:bg-red-50 rounded-lg font-medium"
+                  >
+                    <LogOut className="h-5 w-5" />
+                    <span>Logout</span>
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    to="/login"
+                    onClick={() => setIsOpen(false)}
+                    className="flex items-center justify-center py-3 px-4 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg font-medium"
+                  >
+                    Log in
+                  </Link>
+                  <Link
+                    to="/register"
+                    onClick={() => setIsOpen(false)}
+                    className="flex items-center justify-center py-3 px-4 bg-blue-600 text-white rounded-lg font-medium"
+                  >
+                    Sign up
+                  </Link>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
     </motion.nav>
   );
 };
