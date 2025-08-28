@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, Phone, Mail, MessageCircle, Star, MapPin, Calendar, Clock, User, Send } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { getAgentById, getPropertyAgentContact } from '../services/supabaseService';
+import Loading from '../components/Loading';
 
 const AgentContact = () => {
   const { id, agentId } = useParams();
@@ -14,32 +16,78 @@ const AgentContact = () => {
     contactMethod: 'phone'
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [agent, setAgent] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Mock agent data - in real app, fetch from API
-  const agent = {
-    id: agentId || '1',
-    name: 'Priya Sharma',
-    title: 'Senior Property Consultant',
-    image: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=300&h=300&fit=crop&crop=face',
-    rating: 4.9,
-    reviews: 127,
-    experience: '8+ years',
-    specialization: 'Luxury Properties',
-    phone: '+91 98765 43210',
-    email: 'priya.sharma@easyprop.com',
-    location: 'Mumbai, Maharashtra',
-    languages: ['English', 'Hindi', 'Marathi'],
-    properties: 45,
-    deals: 156,
-    responseTime: '< 2 hours',
-    availability: 'Mon-Sat, 9 AM - 7 PM',
-    bio: 'Experienced real estate professional specializing in luxury properties across Mumbai. Known for personalized service and deep market knowledge.',
-    achievements: [
-      'Top Performer 2023',
-      'Customer Choice Award',
-      'Luxury Property Specialist'
-    ]
-  };
+  useEffect(() => {
+    const fetchAgentData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        let agentData;
+        
+        console.log('Route params:', { agentId, id });
+        console.log('URL:', window.location.href);
+        
+        if (agentId && id) {
+          // Route: /agent-contact/:agentId/:propertyId
+          // agentId = user_id, id = property_id
+          console.log('Fetching agent by ID:', agentId, 'for property:', id);
+          
+          // Check if this is a mock agent ID
+          if (agentId.startsWith('mock-agent-')) {
+            console.log('Using mock agent data for:', agentId);
+            agentData = createMockAgentData(agentId);
+          } else {
+            const result = await getAgentById(agentId);
+            console.log('Agent fetch result:', result);
+            if (result.success) {
+              agentData = result.data;
+              console.log('Agent data:', agentData);
+            } else {
+              console.error('Failed to fetch agent:', result.error);
+              // Fallback to mock data if real agent not found
+              agentData = createMockAgentData(agentId);
+            }
+          }
+        } else if (agentId && !id) {
+          // Route: /agent-contact/:agentId
+          // This could be either a direct agent ID or a property ID
+          console.log('Trying to fetch agent directly first:', agentId);
+          let result = await getAgentById(agentId);
+          console.log('Direct agent fetch result:', result);
+          
+          if (!result.success) {
+            // If direct agent fetch fails, try as property ID
+            console.log('Direct agent fetch failed, trying as property ID:', agentId);
+            result = await getPropertyAgentContact(agentId);
+            console.log('Property agent fetch result:', result);
+          }
+          
+          if (result.success) {
+            agentData = result.data;
+            console.log('Final agent data:', agentData);
+          } else {
+            console.error('All agent fetch attempts failed:', result.error);
+            throw new Error(result.error);
+          }
+        } else {
+          throw new Error('No agent or property ID provided');
+        }
+        
+        setAgent(agentData);
+      } catch (err) {
+        console.error('Error fetching agent data:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAgentData();
+  }, [id, agentId]);
 
   const handleInputChange = (e) => {
     setFormData({
@@ -66,6 +114,47 @@ const AgentContact = () => {
       contactMethod: 'phone'
     });
   };
+
+  if (loading) {
+    return <Loading />;
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-red-600 mb-4">
+            Oops! Something went wrong.
+          </h2>
+          <p className="text-slate-600 mb-8">{error}</p>
+          <Link
+            to={id ? `/property/${id}` : '/properties'}
+            className="btn-primary"
+          >
+            Go Back
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (!agent) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-slate-600 mb-4">
+            Agent not found
+          </h2>
+          <Link
+            to={id ? `/property/${id}` : '/properties'}
+            className="btn-primary"
+          >
+            Go Back
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
@@ -94,7 +183,7 @@ const AgentContact = () => {
             <div className="text-center mb-8">
               <div className="relative inline-block">
                 <img
-                  src={agent.image}
+                  src={agent.contact_info?.avatar_url || `https://i.pravatar.cc/150?u=${agent.id}`}
                   alt={agent.name}
                   className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg mx-auto"
                 />
@@ -104,23 +193,23 @@ const AgentContact = () => {
               </div>
               
               <h1 className="text-2xl font-bold text-slate-900 mt-4">{agent.name}</h1>
-              <p className="text-slate-600 mb-4">{agent.title}</p>
+              <p className="text-slate-600 mb-4">{agent.company || agent.contact_info?.specialization}</p>
               
               <div className="flex items-center justify-center space-x-4 mb-6">
                 <div className="flex items-center space-x-1">
                   <Star className="h-5 w-5 fill-current text-yellow-400" />
-                  <span className="font-semibold">{agent.rating}</span>
-                  <span className="text-slate-500">({agent.reviews} reviews)</span>
+                  <span className="font-semibold">{agent.contact_info?.rating || 4.5}</span>
+                  <span className="text-slate-500">({agent.contact_info?.reviews_count || 50} reviews)</span>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4 text-center">
                 <div className="bg-blue-50 rounded-xl p-4">
-                  <div className="text-2xl font-bold text-blue-600">{agent.properties}</div>
+                  <div className="text-2xl font-bold text-blue-600">{agent.properties_count || 0}</div>
                   <div className="text-sm text-slate-600">Properties Listed</div>
                 </div>
                 <div className="bg-green-50 rounded-xl p-4">
-                  <div className="text-2xl font-bold text-green-600">{agent.deals}</div>
+                  <div className="text-2xl font-bold text-green-600">{agent.contact_info?.deals_closed || 100}</div>
                   <div className="text-sm text-slate-600">Deals Closed</div>
                 </div>
               </div>
@@ -132,7 +221,7 @@ const AgentContact = () => {
                 <MapPin className="h-5 w-5 text-slate-500" />
                 <div>
                   <div className="font-medium text-slate-900">Location</div>
-                  <div className="text-slate-600">{agent.location}</div>
+                  <div className="text-slate-600">Mumbai, Maharashtra</div>
                 </div>
               </div>
 
@@ -140,7 +229,7 @@ const AgentContact = () => {
                 <Clock className="h-5 w-5 text-slate-500" />
                 <div>
                   <div className="font-medium text-slate-900">Response Time</div>
-                  <div className="text-slate-600">{agent.responseTime}</div>
+                  <div className="text-slate-600">{agent.contact_info?.response_time}</div>
                 </div>
               </div>
 
@@ -148,20 +237,20 @@ const AgentContact = () => {
                 <Calendar className="h-5 w-5 text-slate-500" />
                 <div>
                   <div className="font-medium text-slate-900">Availability</div>
-                  <div className="text-slate-600">{agent.availability}</div>
+                  <div className="text-slate-600">{agent.contact_info?.availability}</div>
                 </div>
               </div>
 
               <div className="p-4 bg-slate-50 rounded-xl">
                 <div className="font-medium text-slate-900 mb-2">Specialization</div>
-                <div className="text-slate-600">{agent.specialization}</div>
-                <div className="text-slate-600 mt-1">{agent.experience} experience</div>
+                <div className="text-slate-600">{agent.contact_info?.specialization}</div>
+                <div className="text-slate-600 mt-1">{agent.contact_info?.experience} experience</div>
               </div>
 
               <div className="p-4 bg-slate-50 rounded-xl">
                 <div className="font-medium text-slate-900 mb-2">Languages</div>
                 <div className="flex flex-wrap gap-2">
-                  {agent.languages.map((lang, index) => (
+                  {(agent.contact_info?.languages || ['English', 'Hindi']).map((lang, index) => (
                     <span key={index} className="bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full">
                       {lang}
                     </span>
@@ -170,9 +259,14 @@ const AgentContact = () => {
               </div>
 
               <div className="p-4 bg-slate-50 rounded-xl">
+                <div className="font-medium text-slate-900 mb-2">About</div>
+                <p className="text-slate-600 text-sm">{agent.contact_info?.bio}</p>
+              </div>
+
+              <div className="p-4 bg-slate-50 rounded-xl">
                 <div className="font-medium text-slate-900 mb-2">Achievements</div>
                 <div className="space-y-1">
-                  {agent.achievements.map((achievement, index) => (
+                  {(agent.contact_info?.achievements || ['Top Performer', 'Customer Choice Award']).map((achievement, index) => (
                     <div key={index} className="flex items-center space-x-2">
                       <Star className="h-4 w-4 text-yellow-500" />
                       <span className="text-slate-600 text-sm">{achievement}</span>
@@ -184,14 +278,14 @@ const AgentContact = () => {
               {/* Quick Contact Buttons */}
               <div className="grid grid-cols-2 gap-4">
                 <a
-                  href={`tel:${agent.phone}`}
+                  href={`tel:${agent.contact_info?.phone}`}
                   className="flex items-center justify-center space-x-2 bg-green-600 text-white font-semibold py-3 px-4 rounded-xl hover:bg-green-700 transition-colors"
                 >
                   <Phone className="h-5 w-5" />
                   <span>Call Now</span>
                 </a>
                 <a
-                  href={`mailto:${agent.email}`}
+                  href={`mailto:${agent.contact_info?.email}`}
                   className="flex items-center justify-center space-x-2 bg-blue-600 text-white font-semibold py-3 px-4 rounded-xl hover:bg-blue-700 transition-colors"
                 >
                   <Mail className="h-5 w-5" />
@@ -350,7 +444,7 @@ const AgentContact = () => {
                 <div>
                   <div className="font-semibold text-slate-900">Quick Response Guaranteed</div>
                   <div className="text-slate-600 text-sm mt-1">
-                    {agent.name} typically responds within {agent.responseTime}. 
+                    {agent.name} typically responds within {agent.contact_info?.response_time}. 
                     You'll receive a confirmation email once your message is sent.
                   </div>
                 </div>

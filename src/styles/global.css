@@ -1,2 +1,121 @@
 * { margin: 0; padding: 0; box-sizing: border-box; } 
 body { font-family: sans-serif; } 
+
+/* Improved scrolling behavior */
+html {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+body {
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Mobile-first responsive design */
+@media (max-width: 640px) {
+  .auth-form-container {
+    max-height: calc(100vh - 200px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .auth-form-container::-webkit-scrollbar {
+    width: 4px;
+  }
+  
+  .auth-form-container::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .auth-form-container::-webkit-scrollbar-thumb {
+    background: rgba(156, 163, 175, 0.5);
+    border-radius: 2px;
+  }
+  
+  .auth-form-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(156, 163, 175, 0.8);
+  }
+}
+
+/* Form input focus improvements */
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Smooth transitions for form elements */
+.form-group {
+  transition: all 0.2s ease-in-out;
+}
+
+/* Mobile touch improvements */
+@media (max-width: 640px) {
+  input, select, button {
+    min-height: 44px; /* iOS recommended touch target size */
+  }
+  
+  .btn-primary, .btn-secondary {
+    min-height: 48px;
+  }
+}
+
+/* Prevent horizontal scrolling on mobile */
+.container {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+/* Improved form spacing on mobile */
+@media (max-width: 640px) {
+  .space-y-4 > * + * {
+    margin-top: 1rem;
+  }
+  
+  .space-y-6 > * + * {
+    margin-top: 1.5rem;
+  }
+}
+
+/* Login page specific improvements */
+.login-form-container {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 768px) {
+  .login-form-container {
+    max-height: 70vh;
+  }
+  
+  .login-form-container::-webkit-scrollbar {
+    width: 4px;
+  }
+  
+  .login-form-container::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .login-form-container::-webkit-scrollbar-thumb {
+    background: rgba(156, 163, 175, 0.5);
+    border-radius: 2px;
+  }
+  
+  .login-form-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(156, 163, 175, 0.8);
+  }
+}
+
+/* Smooth scrolling for mode toggle */
+.mode-toggle-smooth {
+  scroll-behavior: smooth;
+}
+
+/* Mobile viewport height fix */
+@media (max-width: 768px) {
+  .min-h-screen {
+    min-height: 100vh;
+    min-height: calc(var(--vh, 1vh) * 100);
+  }
+} 

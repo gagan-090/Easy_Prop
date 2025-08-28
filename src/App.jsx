@@ -25,7 +25,6 @@ import PropertyShare from "./pages/PropertyShare";
 import SearchResults from "./pages/SearchResults";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Auth/Login";
-import Register from "./pages/Auth/Register";
 import DashboardHome from "./pages/Dashboard/Home";
 import AddProperty from "./pages/Dashboard/AddProperty";
 import EditProperty from "./pages/Dashboard/EditProperty";
@@ -151,7 +150,7 @@ function App() {
             
             {/* Auth routes without navbar/footer */}
             <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+            <Route path="/register" element={<Login />} />
             
             {/* Protected profile route with navbar/footer */}
             <Route path="/profile" element={

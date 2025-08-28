@@ -592,11 +592,15 @@ export const getPopularProperties = async (limit = 6) => {
   try {
     const { data, error } = await supabase
       .from('properties')
-      .select('*, users(name, profile, company, photo_url)')
+      .select('*, users(id, name, profile, company, photo_url)')
       .order('views', { ascending: false })
       .limit(limit);
     
     if (error) throw error;
+    
+    // Debug: Log the user_ids to see if they're different
+    console.log('Popular properties user_ids:', data?.map(p => ({ id: p.id, user_id: p.user_id, user_name: p.users?.name })));
+    
     return { success: true, data };
   } catch (error) {
     console.error('Error getting popular properties:', error);
@@ -2312,6 +2316,270 @@ export const getPropertyAnalytics = async (propertyId, daysBack = 30) => {
     return { success: true, data: analytics };
   } catch (error) {
     console.error('❌ Error getting property analytics:', error);
+    return { success: false, error: error.message };
+  }
+};
+// Agent Management Functions
+
+// Get agent details by ID
+export const getAgentById = async (agentId) => {
+  try {
+    console.log('🔍 Getting agent details for:', agentId);
+    
+    // First try with user_type filter
+    let { data, error } = await supabase
+      .from('users')
+      .select(`
+        id,
+        name,
+        email,
+        phone,
+        company,
+        user_type,
+        profile,
+        stats,
+        created_at,
+        updated_at
+      `)
+      .eq('id', agentId)
+      .in('user_type', ['agent', 'builder'])
+      .single();
+    
+    // If no results with user_type filter, try without it
+    if (error && error.code === 'PGRST116') {
+      console.log('No agent found with user_type filter, trying without filter');
+      const result = await supabase
+        .from('users')
+        .select(`
+          id,
+          name,
+          email,
+          phone,
+          company,
+          user_type,
+          profile,
+          stats,
+          created_at,
+          updated_at
+        `)
+        .eq('id', agentId)
+        .single();
+      
+      data = result.data;
+      error = result.error;
+    }
+    
+    if (error) throw error;
+    
+    // Get agent's properties count
+    const { count: propertiesCount, error: propError } = await supabase
+      .from('properties')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', agentId)
+      .eq('status', 'active');
+    
+    if (propError) console.warn('Could not fetch properties count:', propError);
+    
+    // Get agent's recent properties for showcase
+    const { data: recentProperties, error: recentError } = await supabase
+      .from('properties')
+      .select('id, title, price, images, city, property_type')
+      .eq('user_id', agentId)
+      .eq('status', 'active')
+      .order('created_at', { ascending: false })
+      .limit(3);
+    
+    if (recentError) console.warn('Could not fetch recent properties:', recentError);
+    
+    const agentData = {
+      ...data,
+      properties_count: propertiesCount || 0,
+      recent_properties: recentProperties || [],
+      // Default contact info if not in profile
+      contact_info: {
+        phone: data.phone || data.profile?.phone || '+91 98765 43210',
+        email: data.email || data.profile?.email || `${data.name?.toLowerCase().replace(/\s+/g, '.')}@easyprop.com`,
+        whatsapp: data.profile?.whatsapp || data.phone || '+91 98765 43210',
+        response_time: data.profile?.response_time || '< 2 hours',
+        availability: data.profile?.availability || 'Mon-Sat, 9 AM - 7 PM',
+        languages: data.profile?.languages || ['English', 'Hindi'],
+        specialization: data.profile?.specialization || 'Residential Properties',
+        experience: data.profile?.experience || '5+ years',
+        rating: data.stats?.rating || 4.5,
+        reviews_count: data.stats?.reviews_count || 50,
+        deals_closed: data.stats?.deals_closed || 100,
+        bio: data.profile?.bio || `Experienced real estate professional specializing in ${data.profile?.specialization || 'residential properties'}. Known for personalized service and deep market knowledge.`,
+        achievements: data.profile?.achievements || ['Top Performer', 'Customer Choice Award'],
+        avatar_url: data.profile?.avatar_url || `https://i.pravatar.cc/150?u=${data.id}`
+      }
+    };
+    
+    console.log('✅ Agent details fetched successfully');
+    return { success: true, data: agentData };
+  } catch (error) {
+    console.error('❌ Error getting agent details:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+// Get agents for Top Picks section with contact info
+export const getTopPicksAgents = async (limit = 4) => {
+  try {
+    console.log('🏆 Getting top picks agents with contact info');
+    
+    const { data, error } = await supabase
+      .from('users')
+      .select(`
+        id,
+        name,
+        email,
+        phone,
+        company,
+        user_type,
+        profile,
+        stats,
+        created_at,
+        updated_at
+      `)
+      .in('user_type', ['agent', 'builder'])
+      .order('updated_at', { ascending: false })
+      .limit(limit);
+    
+    // If we don't get enough agents from the database, create mock agents
+    let agents = [];
+    if (error || !data || data.length === 0) {
+      console.log('No agents found in database, creating mock agents');
+      agents = [
+        {
+          id: 'mock-agent-1',
+          name: 'Priya Sharma',
+          company: 'Elite Properties',
+          email: 'priya.sharma@easyprop.com',
+          phone: '+91 98765 43210'
+        },
+        {
+          id: 'mock-agent-2', 
+          name: 'Rajesh Kumar',
+          company: 'Premium Realty',
+          email: 'rajesh.kumar@easyprop.com',
+          phone: '+91 98765 43211'
+        },
+        {
+          id: 'mock-agent-3',
+          name: 'Anita Desai',
+          company: 'Luxury Homes',
+          email: 'anita.desai@easyprop.com', 
+          phone: '+91 98765 43212'
+        },
+        {
+          id: 'mock-agent-4',
+          name: 'Vikram Singh',
+          company: 'Metro Properties',
+          email: 'vikram.singh@easyprop.com',
+          phone: '+91 98765 43213'
+        }
+      ];
+    } else {
+      agents = data;
+    }
+    
+    // Enhance each agent with contact info and property counts
+    const enhancedAgents = await Promise.all(
+      agents.map(async (agent) => {
+        // Get agent's properties count
+        const { count: propertiesCount } = await supabase
+          .from('properties')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', agent.id)
+          .eq('status', 'active');
+        
+        return {
+          ...agent,
+          properties_count: propertiesCount || 0,
+          contact_info: {
+            phone: agent.phone || agent.profile?.phone || '+91 98765 43210',
+            email: agent.email || agent.profile?.email || `${agent.name?.toLowerCase().replace(/\s+/g, '.')}@easyprop.com`,
+            whatsapp: agent.profile?.whatsapp || agent.phone || '+91 98765 43210',
+            response_time: agent.profile?.response_time || '< 2 hours',
+            availability: agent.profile?.availability || 'Mon-Sat, 9 AM - 7 PM',
+            languages: agent.profile?.languages || ['English', 'Hindi'],
+            specialization: agent.profile?.specialization || 'Residential Properties',
+            experience: agent.profile?.experience || '5+ years',
+            rating: agent.stats?.rating || 4.5,
+            reviews_count: agent.stats?.reviews_count || 50,
+            deals_closed: agent.stats?.deals_closed || 100,
+            bio: agent.profile?.bio || `Experienced real estate professional specializing in ${agent.profile?.specialization || 'residential properties'}.`,
+            achievements: agent.profile?.achievements || ['Top Performer', 'Customer Choice Award'],
+            avatar_url: agent.profile?.avatar_url || `https://i.pravatar.cc/150?u=${agent.id}`
+          }
+        };
+      })
+    );
+    
+    console.log('✅ Top picks agents with contact info fetched successfully');
+    return { success: true, data: enhancedAgents };
+  } catch (error) {
+    console.error('❌ Error getting top picks agents:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+// Get agent contact info for property
+export const getPropertyAgentContact = async (propertyId) => {
+  try {
+    console.log('📞 Getting agent contact info for property:', propertyId);
+    
+    const { data, error } = await supabase
+      .from('properties')
+      .select(`
+        user_id,
+        users (
+          id,
+          name,
+          email,
+          phone,
+          company,
+          user_type,
+          profile,
+          stats
+        )
+      `)
+      .eq('id', propertyId)
+      .single();
+    
+    if (error) throw error;
+    
+    if (!data.users) {
+      throw new Error('Agent not found for this property');
+    }
+    
+    const agent = data.users;
+    const agentContactInfo = {
+      id: agent.id,
+      name: agent.name,
+      company: agent.company,
+      contact_info: {
+        phone: agent.phone || agent.profile?.phone || '+91 98765 43210',
+        email: agent.email || agent.profile?.email || `${agent.name?.toLowerCase().replace(/\s+/g, '.')}@easyprop.com`,
+        whatsapp: agent.profile?.whatsapp || agent.phone || '+91 98765 43210',
+        response_time: agent.profile?.response_time || '< 2 hours',
+        availability: agent.profile?.availability || 'Mon-Sat, 9 AM - 7 PM',
+        languages: agent.profile?.languages || ['English', 'Hindi'],
+        specialization: agent.profile?.specialization || 'Residential Properties',
+        experience: agent.profile?.experience || '5+ years',
+        rating: agent.stats?.rating || 4.5,
+        reviews_count: agent.stats?.reviews_count || 50,
+        deals_closed: agent.stats?.deals_closed || 100,
+        bio: agent.profile?.bio || `Experienced real estate professional specializing in ${agent.profile?.specialization || 'residential properties'}.`,
+        achievements: agent.profile?.achievements || ['Top Performer', 'Customer Choice Award'],
+        avatar_url: agent.profile?.avatar_url || `https://i.pravatar.cc/150?u=${agent.id}`
+      }
+    };
+    
+    console.log('✅ Agent contact info fetched successfully');
+    return { success: true, data: agentContactInfo };
+  } catch (error) {
+    console.error('❌ Error getting agent contact info:', error);
     return { success: false, error: error.message };
   }
 };

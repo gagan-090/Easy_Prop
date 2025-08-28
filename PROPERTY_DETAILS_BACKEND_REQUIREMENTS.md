@@ -1,12 +1,15 @@
 # Property Details Page - Backend Requirements
 
 ## Overview
+
 This document outlines all the additional database fields and backend enhancements required to make the PropertyDetails page fully dynamic. The current implementation has comprehensive UI sections that need corresponding backend data support.
 
 ## Current Database Schema Analysis
 
 ### Existing Properties Table Fields
+
 Based on the current schema, we have:
+
 - Basic info: `id`, `title`, `description`, `price`, `area`, `bedrooms`, `bathrooms`
 - Location: `address`, `city`, `state`, `country`, `pincode`, `locality`, `latitude`, `longitude`
 - Property details: `property_type`, `type` (sale/rent), `category`, `furnishing`, `facing`
@@ -18,6 +21,7 @@ Based on the current schema, we have:
 ### 1. Property Specifications Section
 
 #### Core Property Details
+
 ```sql
 -- Add to properties table
 ALTER TABLE properties ADD COLUMN built_year INTEGER;
@@ -35,6 +39,7 @@ ALTER TABLE properties ADD COLUMN super_area INTEGER DEFAULT 0;
 ```
 
 #### Property Features & Amenities
+
 ```sql
 -- Enhanced amenities (JSON array)
 ALTER TABLE properties ADD COLUMN amenities JSONB DEFAULT '[]';
@@ -48,6 +53,7 @@ ALTER TABLE properties ADD COLUMN community_features JSONB DEFAULT '[]';
 ### 2. Floor Plans & Media Section
 
 #### Floor Plans Table
+
 ```sql
 CREATE TABLE IF NOT EXISTS property_floor_plans (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -63,6 +69,7 @@ CREATE TABLE IF NOT EXISTS property_floor_plans (
 ```
 
 #### Virtual Tours & Media
+
 ```sql
 -- Add to properties table
 ALTER TABLE properties ADD COLUMN virtual_tour_url TEXT;
@@ -84,6 +91,7 @@ CREATE TABLE IF NOT EXISTS property_documents (
 ### 3. Location & Neighborhood Data
 
 #### Nearby Facilities Table
+
 ```sql
 CREATE TABLE IF NOT EXISTS nearby_facilities (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -98,6 +106,7 @@ CREATE TABLE IF NOT EXISTS nearby_facilities (
 ```
 
 #### Transportation Links
+
 ```sql
 -- Add to properties table
 ALTER TABLE properties ADD COLUMN metro_distance INTEGER; -- in meters
@@ -121,6 +130,7 @@ CREATE TABLE IF NOT EXISTS transportation_links (
 ### 4. Market Data & Analytics
 
 #### Price History Table
+
 ```sql
 CREATE TABLE IF NOT EXISTS property_price_history (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -134,6 +144,7 @@ CREATE TABLE IF NOT EXISTS property_price_history (
 ```
 
 #### Market Trends & Area Statistics
+
 ```sql
 -- Add to properties table
 ALTER TABLE properties ADD COLUMN investment_score DECIMAL(3,1); -- out of 10
@@ -158,6 +169,7 @@ CREATE TABLE IF NOT EXISTS area_statistics (
 ### 5. Legal & Documentation
 
 #### Legal Information
+
 ```sql
 -- Add to properties table
 ALTER TABLE properties ADD COLUMN legal_status TEXT DEFAULT 'clear'; -- 'clear', 'disputed', 'pending'
@@ -181,6 +193,7 @@ CREATE TABLE IF NOT EXISTS legal_documents_status (
 ### 6. Financial Information
 
 #### Financing Options
+
 ```sql
 CREATE TABLE IF NOT EXISTS financing_options (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -195,6 +208,7 @@ CREATE TABLE IF NOT EXISTS financing_options (
 ```
 
 #### Government Schemes
+
 ```sql
 -- Add to properties table
 ALTER TABLE properties ADD COLUMN pmay_eligible BOOLEAN DEFAULT FALSE;
@@ -205,6 +219,7 @@ ALTER TABLE properties ADD COLUMN subsidy_amount DECIMAL(10,2) DEFAULT 0;
 ### 7. Future Development Projects
 
 #### Upcoming Projects Table
+
 ```sql
 CREATE TABLE IF NOT EXISTS future_projects (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -223,6 +238,7 @@ CREATE TABLE IF NOT EXISTS future_projects (
 ### 8. Property Reviews & Ratings
 
 #### Property Reviews Table
+
 ```sql
 CREATE TABLE IF NOT EXISTS property_reviews (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -239,6 +255,7 @@ CREATE TABLE IF NOT EXISTS property_reviews (
 ### 9. Enhanced Property Images
 
 #### Property Images Table (Enhanced)
+
 ```sql
 CREATE TABLE IF NOT EXISTS property_images (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -256,6 +273,7 @@ CREATE TABLE IF NOT EXISTS property_images (
 ### 10. Weather & Environmental Data
 
 #### Environmental Information
+
 ```sql
 -- Add to properties table
 ALTER TABLE properties ADD COLUMN air_quality_index INTEGER;
@@ -268,6 +286,7 @@ ALTER TABLE properties ADD COLUMN power_backup BOOLEAN DEFAULT FALSE;
 ## Required Backend API Enhancements
 
 ### 1. Enhanced Property Fetching API
+
 ```javascript
 // GET /api/properties/:id/detailed
 // Should return all related data in a single response:
@@ -286,6 +305,7 @@ ALTER TABLE properties ADD COLUMN power_backup BOOLEAN DEFAULT FALSE;
 ```
 
 ### 2. Similar Properties API Enhancement
+
 ```javascript
 // GET /api/properties/:id/similar
 // Enhanced filtering with multiple categories:
@@ -300,6 +320,7 @@ ALTER TABLE properties ADD COLUMN power_backup BOOLEAN DEFAULT FALSE;
 ```
 
 ### 3. Market Data API
+
 ```javascript
 // GET /api/market-data/:locality
 {
@@ -313,12 +334,14 @@ ALTER TABLE properties ADD COLUMN power_backup BOOLEAN DEFAULT FALSE;
 ## Database Migration Scripts
 
 ### Migration Order
+
 1. Add new columns to existing `properties` table
 2. Create new tables (floor_plans, nearby_facilities, etc.)
 3. Create indexes for performance
 4. Populate sample data for testing
 
 ### Sample Migration Script
+
 ```sql
 -- migration/enhance-property-details.sql
 
@@ -340,7 +363,7 @@ CREATE INDEX IF NOT EXISTS idx_nearby_facilities_property_id ON nearby_facilitie
 
 -- Step 4: Insert sample data
 INSERT INTO area_statistics (locality, city, population, avg_income, growth_rate, livability_score)
-VALUES 
+VALUES
 ('Koramangala', 'Bangalore', 45000, 850000, 12.5, 4.2),
 ('Bandra', 'Mumbai', 65000, 1200000, 8.3, 4.5);
 ```
@@ -348,7 +371,9 @@ VALUES
 ## Frontend Integration Points
 
 ### 1. AddProperty Form Enhancements
+
 The `AddProperty` component needs to be enhanced with:
+
 - Floor plan upload section
 - Amenities checklist (comprehensive)
 - Builder/project information
@@ -357,39 +382,43 @@ The `AddProperty` component needs to be enhanced with:
 - Transportation details
 
 ### 2. Data Validation
+
 ```javascript
 // Enhanced validation schema
 const propertyValidationSchema = {
   // Basic fields (existing)
   title: { required: true, minLength: 10 },
   price: { required: true, min: 100000 },
-  
+
   // New required fields
   builder: { required: true },
   built_year: { required: true, min: 1950, max: new Date().getFullYear() + 5 },
   rera_id: { required: false, pattern: /^[A-Z0-9]{10,}$/ },
-  
+
   // Arrays
   amenities: { required: true, minItems: 3 },
-  floorPlans: { required: false, maxItems: 5 }
+  floorPlans: { required: false, maxItems: 5 },
 };
 ```
 
 ## Implementation Priority
 
 ### Phase 1 (High Priority)
+
 1. ✅ Basic property specifications fields
 2. ✅ Enhanced amenities and features
 3. ✅ Floor plans table and upload
 4. ✅ Nearby facilities data
 
 ### Phase 2 (Medium Priority)
+
 1. ✅ Price history and market data
 2. ✅ Legal documentation status
 3. ✅ Transportation links
 4. ✅ Future projects data
 
 ### Phase 3 (Low Priority)
+
 1. ✅ Property reviews system
 2. ✅ Environmental data
 3. ✅ Advanced analytics
@@ -398,7 +427,9 @@ const propertyValidationSchema = {
 ## Testing Requirements
 
 ### Sample Data Population
+
 Create comprehensive sample data for:
+
 - 50+ properties with all fields populated
 - Multiple floor plans per property
 - Nearby facilities for each locality
@@ -406,6 +437,7 @@ Create comprehensive sample data for:
 - Future projects in major cities
 
 ### API Testing
+
 - Test all enhanced endpoints
 - Verify data relationships
 - Performance testing with large datasets

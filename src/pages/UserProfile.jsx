@@ -542,7 +542,7 @@ const FavoritesTab = ({ favorites, onFavoriteToggle }) => {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div className="property-card-grid">
         {favorites.map((favorite, index) => (
           <motion.div
             key={favorite.id}
@@ -873,7 +873,7 @@ const PropertiesTab = ({ properties }) => {
       {activeProperties.length > 0 && (
         <div className="bg-white rounded-xl p-6 shadow-sm">
           <h3 className="text-lg font-semibold mb-4">Active Properties</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="property-card-grid">
             {activeProperties.map((property, index) => (
               <motion.div
                 key={property.id}
@@ -896,7 +896,7 @@ const PropertiesTab = ({ properties }) => {
       {soldProperties.length > 0 && (
         <div className="bg-white rounded-xl p-6 shadow-sm">
           <h3 className="text-lg font-semibold mb-4">Sold Properties</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="property-card-grid">
             {soldProperties.map((property, index) => (
               <motion.div
                 key={property.id}

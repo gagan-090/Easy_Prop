@@ -31,6 +31,15 @@ export const AuthProvider = ({ children }) => {
   // Monitor auth state changes
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      // Skip auth state changes during email checking to prevent auto-login during signup
+      const isCheckingEmail = localStorage.getItem('checking_email');
+      const isRegistering = localStorage.getItem('registering_user');
+      
+      if ((isCheckingEmail || isRegistering) && firebaseUser) {
+        console.log('🚫 Skipping auth state change during email check or registration process');
+        return;
+      }
+      
       if (firebaseUser) {
         // User is signed in
         const userData = {
@@ -220,6 +229,9 @@ export const AuthProvider = ({ children }) => {
   // Check if email is already registered
   const checkEmailExists = async (email) => {
     try {
+      // Set flag to prevent auth state changes during email checking
+      localStorage.setItem('checking_email', 'true');
+      
       // Try to create a user with a dummy password to check if email exists
       // This will throw an error if email is already in use
       const tempPassword = 'temp123456';
@@ -231,8 +243,13 @@ export const AuthProvider = ({ children }) => {
         await currentUser.delete();
       }
       
+      // Clear the flag
+      localStorage.removeItem('checking_email');
       return { success: true, exists: false };
     } catch (error) {
+      // Clear the flag
+      localStorage.removeItem('checking_email');
+      
       if (error.code === 'auth/email-already-in-use') {
         return { success: true, exists: true };
       }
@@ -330,6 +347,9 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('temp_user_type', userType);
       console.log('💾 Stored temporary user type:', userType);
 
+      // Set flag to indicate we're in registration process
+      localStorage.setItem('registering_user', 'true');
+
       // Create user account after OTP verification
       const result = await createUserWithEmailAndPassword(auth, email, password);
       
@@ -358,6 +378,9 @@ export const AuthProvider = ({ children }) => {
         // Don't fail registration if profile creation fails
       }
 
+      // Clear the registration flag
+      localStorage.removeItem('registering_user');
+      
       return { 
         success: true, 
         message: 'Registration successful! You are now logged in.',
@@ -365,6 +388,10 @@ export const AuthProvider = ({ children }) => {
       };
     } catch (error) {
       console.error('Email registration error:', error);
+      
+      // Clear the registration flag on error
+      localStorage.removeItem('registering_user');
+      
       let errorMessage = 'Registration failed. Please try again.';
       
       switch (error.code) {

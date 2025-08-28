@@ -28,6 +28,7 @@ import {
   Calculator,
   ExternalLink,
   X,
+  Calendar,
 } from "lucide-react";
 import PropertyCard from "../components/PropertyCard";
 import ModernSearchFilter from "../components/ModernSearchFilter";
@@ -39,6 +40,8 @@ import {
   getTopSellers,
   getHomepageStats,
   getNearbyProperties,
+  getTopPicksAgents,
+  getPropertyAgentContact,
 } from "../services/supabaseService";
 
 const Home = () => {
@@ -49,6 +52,7 @@ const Home = () => {
   const [recentProperties, setRecentProperties] = useState([]);
   const [nearbyProperties, setNearbyProperties] = useState([]);
   const [topSellers, setTopSellers] = useState([]);
+  const [topPicksAgents, setTopPicksAgents] = useState([]);
 
   const [stats, setStats] = useState({
     propertiesListed: "10K+",
@@ -110,12 +114,14 @@ const Home = () => {
           recentPropsRes,
           topSellersRes,
           statsRes,
+          topPicksAgentsRes,
         ] = await Promise.all([
           getFeaturedProperty(),
           getPopularProperties(6),
           getRecentProperties(4),
           getTopSellers(4),
           getHomepageStats(),
+          getTopPicksAgents(4),
         ]);
 
         if (featuredPropRes.success) {
@@ -172,6 +178,13 @@ const Home = () => {
           });
         } else {
           console.warn("Could not fetch homepage stats:", statsRes.error);
+        }
+
+        if (topPicksAgentsRes.success) {
+          console.log('Top picks agents data:', topPicksAgentsRes.data);
+          setTopPicksAgents(topPicksAgentsRes.data);
+        } else {
+          console.warn("Could not fetch top picks agents:", topPicksAgentsRes.error);
         }
       } catch (err) {
         console.error("Error fetching homepage data:", err);
@@ -530,16 +543,18 @@ const Home = () => {
             </div>
           </div>
 
-          {/* Desktop: Grid Layout */}
-          <div className="hidden md:grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 stagger-children">
-            {popularProperties.map((property) => (
-              <div key={property.id}>
-                <PropertyCard
-                  property={property}
-                  onFavorite={(id) => console.log("Favorite clicked:", id)}
-                />
-              </div>
-            ))}
+          {/* Desktop: Grid Layout - Updated for 8 cards visibility */}
+          <div className="hidden md:block">
+            <div className="property-card-grid stagger-children">
+              {popularProperties.map((property) => (
+                <div key={property.id}>
+                  <PropertyCard
+                    property={property}
+                    onFavorite={(id) => console.log("Favorite clicked:", id)}
+                  />
+                </div>
+              ))}
+            </div>
           </div>
 
           <div className="text-center mt-8 md:mt-12">
@@ -657,68 +672,123 @@ const Home = () => {
 
           <div className="overflow-hidden">
             <div className="flex space-x-4 md:space-x-6 pb-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory mobile-scroll px-4 md:px-0">
-              {popularProperties.slice(0, 4).map((property, index) => (
-                <div
-                  key={property.id}
-                  className="flex-none w-72 md:w-80 snap-start property-card-mobile md:property-card-desktop"
-                >
-                  <div className="property-card-enhanced group">
-                    <div className="relative overflow-hidden rounded-t-2xl">
-                      <img
-                        src={
-                          property.images?.[0] ||
-                          "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=300&fit=crop&crop=center"
-                        }
-                        alt={property.title}
-                        className="w-full h-40 md:h-48 object-cover group-hover:scale-110 transition-transform duration-700"
-                      />
-                      <div className="absolute top-4 left-4">
-                        <div className="bg-gradient-primary text-white px-2 md:px-3 py-1 rounded-full text-xs font-semibold shadow-lg">
-                          {index === 0
-                            ? "🏆 Luxury Pick"
-                            : index === 1
-                            ? "🔥 Hot Deal"
-                            : "⭐ Editor's Choice"}
+              {popularProperties.slice(0, 4).map((property, index) => {
+                // Use the user data that's already included with the property
+                console.log('Property:', property.id, 'User ID:', property.user_id, 'User data:', property.users);
+                
+                // Always use the property's associated agent (property.users)
+                let agent = property.users;
+                
+                // Only fallback to a default agent if the property has no user data at all
+                if (!agent && topPicksAgents.length > 0) {
+                  // Use the first available agent as a consistent fallback, not cycling through
+                  agent = topPicksAgents[0];
+                }
+                
+                console.log('Using agent:', agent?.name, 'ID:', agent?.id);
+                
+                return (
+                  <div
+                    key={property.id}
+                    className="flex-none w-72 md:w-80 snap-start property-card-mobile md:property-card-desktop"
+                  >
+                    <div className="property-card-enhanced group">
+                      <div className="relative overflow-hidden rounded-t-2xl">
+                        <img
+                          src={
+                            property.images?.[0] ||
+                            "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=300&fit=crop&crop=center"
+                          }
+                          alt={property.title}
+                          className="w-full h-40 md:h-48 object-cover group-hover:scale-110 transition-transform duration-700"
+                        />
+                        <div className="absolute top-4 left-4">
+                          <div className="bg-gradient-primary text-white px-2 md:px-3 py-1 rounded-full text-xs font-semibold shadow-lg">
+                            {index === 0
+                              ? "🏆 Luxury Pick"
+                              : index === 1
+                              ? "🔥 Hot Deal"
+                              : "⭐ Editor's Choice"}
+                          </div>
                         </div>
+                        <button className="absolute top-4 right-4 w-8 md:w-10 h-8 md:h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110">
+                          <Heart className="h-4 md:h-5 w-4 md:w-5 text-slate-600 hover:text-red-500 transition-colors" />
+                        </button>
                       </div>
-                      <button className="absolute top-4 right-4 w-8 md:w-10 h-8 md:h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110">
-                        <Heart className="h-4 md:h-5 w-4 md:w-5 text-slate-600 hover:text-red-500 transition-colors" />
-                      </button>
-                    </div>
 
-                    <div className="p-4 md:p-6 bg-white rounded-b-2xl">
-                      <div className="flex items-center text-sm text-slate-600 mb-2">
-                        <MapPin className="h-4 w-4 mr-1" />
-                        <span className="truncate">{property.address}</span>
-                      </div>
-                      <h3 className="text-base md:text-lg font-semibold text-slate-900 mb-2 line-clamp-2">
-                        {property.title}
-                      </h3>
-                      <div className="price-tag mb-3 md:mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent text-lg md:text-xl">
-                        {formatPrice(property.price)}
-                      </div>
-                      <div className="flex items-center justify-between text-sm text-slate-600 mb-3 md:mb-4">
-                        <span>{property.bedrooms} BHK</span>
-                        <span>{property.area} sqft</span>
-                      </div>
-                      <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-3">
-                        <Link
-                          to={`/agent-contact/${property.user_id}/${property.id}`}
-                          className="flex-1 btn-secondary text-center text-sm py-2"
-                        >
-                          Contact
-                        </Link>
-                        <Link
-                          to={`/schedule-tour/${property.id}`}
-                          className="flex-1 btn-primary text-center text-sm py-2"
-                        >
-                          Book Visit
-                        </Link>
+                      <div className="p-4 md:p-6 bg-white rounded-b-2xl">
+                        <div className="flex items-center text-sm text-slate-600 mb-2">
+                          <MapPin className="h-4 w-4 mr-1" />
+                          <span className="truncate">{property.address}</span>
+                        </div>
+                        <h3 className="text-base md:text-lg font-semibold text-slate-900 mb-2 line-clamp-2">
+                          {property.title}
+                        </h3>
+                        <div className="price-tag mb-3 md:mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent text-lg md:text-xl">
+                          {formatPrice(property.price)}
+                        </div>
+                        <div className="flex items-center justify-between text-sm text-slate-600 mb-3 md:mb-4">
+                          <span>{property.bedrooms} BHK</span>
+                          <span>{property.area} sqft</span>
+                        </div>
+
+                        {/* Dynamic Agent Contact Info */}
+                        {agent && (
+                          <div className="bg-slate-50 rounded-xl p-3 mb-3">
+                            <div className="flex items-center space-x-3">
+                              <img
+                                src={
+                                  agent.profile?.avatar_url || 
+                                  agent.photo_url || 
+                                  `https://i.pravatar.cc/150?u=${agent.id}`
+                                }
+                                alt={agent.name}
+                                className="w-8 h-8 rounded-full object-cover border-2 border-white shadow-sm"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <div className="text-sm font-semibold text-slate-900 truncate">
+                                  {agent.name}
+                                </div>
+                                <div className="text-xs text-slate-600 truncate">
+                                  {agent.company || agent.profile?.specialization || 'Real Estate Agent'}
+                                </div>
+                              </div>
+                              <div className="flex items-center space-x-1">
+                                <Star className="h-3 w-3 fill-current text-yellow-400" />
+                                <span className="text-xs text-slate-600">
+                                  {agent.profile?.rating || 4.5}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="mt-2 flex items-center justify-between text-xs text-slate-500">
+                              <span>{agent.profile?.experience || '5+ years'}</span>
+                              <span>Verified Agent</span>
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-3">
+                          <Link
+                            to={`/agent-contact/${agent?.id || property.user_id}/${property.id}`}
+                            className="flex-1 btn-secondary text-center text-sm py-2 flex items-center justify-center space-x-1"
+                            onClick={() => console.log('Navigating to agent contact for agent:', agent?.id || property.user_id, 'property:', property.id)}
+                          >
+                            <Phone className="h-3 w-3" />
+                            <span>Contact</span>
+                          </Link>
+                          <Link
+                            to={`/schedule-tour/${property.id}`}
+                            className="flex-1 btn-primary text-center text-sm py-2 flex items-center justify-center space-x-1"
+                          >
+                            <Calendar className="h-3 w-3" />
+                            <span>Book Visit</span>
+                          </Link>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>

@@ -1613,3 +1613,66 @@ a {
     max-height: 70vh !important;
   }
 }
+
+/* PropertyCard Responsive Improvements */
+.property-card-grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+/* Ensure consistent card heights */
+.property-card-grid > * {
+  height: fit-content;
+  min-height: 320px;
+}
+
+/* Responsive grid for 8-card visibility */
+@media (min-width: 768px) {
+  .property-card-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .property-card-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.75rem;
+  }
+  
+  .property-card-grid > * {
+    min-height: 340px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .property-card-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+  }
+  
+  .property-card-grid > * {
+    min-height: 360px;
+  }
+}
+
+@media (min-width: 1536px) {
+  .property-card-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+  }
+}
+
+/* Property card compact mode for better density */
+.property-card-compact {
+  max-width: none !important;
+  width: 100% !important;
+}
+
+.property-card-compact .property-image {
+  height: 10rem !important; /* 160px */
+}
+
+.property-card-compact .property-content {
+  padding: 0.75rem !important;
+}
